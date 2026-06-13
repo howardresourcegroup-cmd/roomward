@@ -9,7 +9,7 @@ import { BuildingSetupForm } from "./building-setup-form";
 
 // Pages that must stay reachable even before a building exists — account-level
 // settings, profile, appearance, billing, and help don't depend on a property.
-const ALWAYS_ALLOWED = ["/settings", "/help"];
+const ALWAYS_ALLOWED = ["/settings", "/help", "/corporate"];
 
 export function BuildingSetupGuard({ children }: { children: React.ReactNode }) {
   const { buildings, loading, reload } = useBuildings();

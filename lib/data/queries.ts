@@ -8,6 +8,7 @@ import { createClient } from "@/lib/supabase/client";
 import type {
   Building, Floor, Space, WorkOrder, Profile, Channel, Message, Asset,
   SpaceStatus, HousekeepingStatus, WorkOrderStatus, WorkOrderPriority, AssetStatus, DashboardStats,
+  AuditLog, Announcement,
 } from "@/types";
 
 const sb = () => createClient();
@@ -516,4 +517,81 @@ export async function fetchRecentActivity(): Promise<import("@/types").ActivityI
   }
 
   return items.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()).slice(0, 10);
+}
+
+// ─── Corporate — Audit Log ────────────────────────────────────────────────────
+export async function fetchAuditLogs(limit = 60, filter?: string): Promise<AuditLog[]> {
+  let q = sb()
+    .from("audit_logs")
+    .select("*")
+    .order("created_at", { ascending: false })
+    .limit(limit);
+  if (filter) q = q.like("action", `${filter}.%`);
+  const { data } = await q;
+  return (data ?? []) as AuditLog[];
+}
+
+// ─── Corporate — Announcements ────────────────────────────────────────────────
+export async function fetchAnnouncements(): Promise<Announcement[]> {
+  const { data } = await sb()
+    .from("announcements")
+    .select("*, author:profiles!author_id(full_name, avatar_url)")
+    .order("pinned", { ascending: false })
+    .order("created_at", { ascending: false })
+    .limit(50);
+  return (data ?? []) as Announcement[];
+}
+
+export async function createAnnouncement(input: {
+  title: string;
+  body: string;
+  target_roles: string[];
+  pinned: boolean;
+}): Promise<void> {
+  const supabase = sb();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) throw new Error("Not authenticated");
+  const { data: me } = await supabase.from("profiles").select("organization_id").eq("id", user.id).single();
+  if (!me?.organization_id) throw new Error("No organization");
+
+  const { data: ann, error } = await supabase
+    .from("announcements")
+    .insert({
+      organization_id: me.organization_id,
+      author_id: user.id,
+      title: input.title.trim(),
+      body: input.body.trim(),
+      target_roles: input.target_roles,
+      pinned: input.pinned,
+    })
+    .select()
+    .single();
+  if (error) throw error;
+
+  // Push in-app notifications to every targeted profile
+  let profileQ = supabase
+    .from("profiles")
+    .select("id")
+    .eq("organization_id", me.organization_id);
+  if (input.target_roles.length > 0) {
+    profileQ = profileQ.in("role", input.target_roles);
+  }
+  const { data: targets } = await profileQ;
+  if (targets?.length) {
+    await supabase.from("notifications").insert(
+      (targets as { id: string }[]).map((p) => ({
+        user_id: p.id,
+        title: ann.title,
+        body: ann.body.slice(0, 300),
+        type: "system" as const,
+        read: false,
+        data: { announcement_id: ann.id },
+      }))
+    );
+  }
+}
+
+export async function deleteAnnouncement(id: string): Promise<void> {
+  const { error } = await sb().from("announcements").delete().eq("id", id);
+  if (error) throw error;
 }

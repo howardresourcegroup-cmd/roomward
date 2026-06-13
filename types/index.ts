@@ -26,7 +26,7 @@ export type WorkOrderStatus =
 
 export type WorkOrderPriority = "low" | "medium" | "high" | "critical";
 
-export type UserRole = "admin" | "manager" | "technician" | "viewer";
+export type UserRole = "admin" | "manager" | "technician" | "viewer" | "hr";
 
 export type AssetStatus = "operational" | "degraded" | "failed" | "maintenance";
 
@@ -220,6 +220,34 @@ export interface Message {
   created_at: string;
   // virtual
   author?: Profile;
+}
+
+// ─── Corporate / audit ───────────────────────────────────────────────────────
+export interface AuditLog {
+  id: string;
+  organization_id: string;
+  actor_id: string | null;
+  actor_name: string | null;
+  action: string;
+  resource_type: string | null;
+  resource_id: string | null;
+  resource_label: string | null;
+  meta: Record<string, unknown>;
+  created_at: string;
+}
+
+export interface Announcement {
+  id: string;
+  organization_id: string;
+  author_id: string | null;
+  title: string;
+  body: string;
+  target_roles: string[];
+  pinned: boolean;
+  created_at: string;
+  updated_at: string;
+  // virtual (joined)
+  author?: { full_name: string | null; avatar_url: string | null } | null;
 }
 
 // UI helper types

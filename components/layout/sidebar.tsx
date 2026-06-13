@@ -6,7 +6,7 @@ import { usePathname } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   LayoutDashboard, Building2, ClipboardList, Users,
-  Settings, ChevronLeft, Package, BarChart3, LogOut, MessageSquare, HelpCircle, BedDouble, Map, X, ConciergeBell,
+  Settings, ChevronLeft, Package, BarChart3, LogOut, MessageSquare, HelpCircle, BedDouble, Map, X, ConciergeBell, Megaphone,
 } from "lucide-react";
 import { cn, getInitials } from "@/lib/utils";
 import { useAppStore } from "@/lib/store";
@@ -23,6 +23,7 @@ const NAV_ITEMS = [
   { href: "/housekeeping", icon: BedDouble, label: "Housekeeping", perm: "buildings.view" },
   { href: "/front-desk", icon: ConciergeBell, label: "Front Desk", perm: "buildings.view" },
   { href: "/messages", icon: MessageSquare, label: "Team Chat", perm: "chat.participate" },
+  { href: "/corporate", icon: Megaphone, label: "Corporate", perm: "dashboard.view" },
   { href: "/technicians", icon: Users, label: "Technicians", perm: "team.view" },
   { href: "/assets", icon: Package, label: "Assets", perm: "assets.view" },
   { href: "/reports", icon: BarChart3, label: "Reports", perm: "reports.view" },

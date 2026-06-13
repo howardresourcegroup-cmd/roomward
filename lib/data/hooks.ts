@@ -7,6 +7,7 @@ import { fetchRoles, fetchMyPermissions } from "./roles";
 import type {
   Building, Floor, Space, WorkOrder, Profile, Channel, Message, Role, Asset,
   SpaceStatus, HousekeepingStatus, WorkOrderStatus, DashboardStats, ActivityItem,
+  AuditLog, Announcement,
 } from "@/types";
 
 // ─── Tiny stale-while-revalidate cache ────────────────────────────────────────
@@ -259,4 +260,43 @@ export function useMessages(channelId: string | null) {
   }, [channelId]);
 
   return { messages, loading, send };
+}
+
+// ─── Corporate ────────────────────────────────────────────────────────────────
+export function useAuditLogs(filter?: string) {
+  const key = `audit_logs:${filter ?? "all"}`;
+  const fetcher = useCallback(() => q.fetchAuditLogs(60, filter), [filter]);
+  const { data, loading, reload } = useCachedQuery<AuditLog[]>(key, fetcher, []);
+  return { logs: data, loading, reload };
+}
+
+export function useAnnouncements() {
+  const supabase = createClient();
+  const { data, loading, reload, setData } = useCachedQuery<Announcement[]>(
+    "announcements", q.fetchAnnouncements, []
+  );
+
+  // Realtime: new announcements appear for everyone without a refresh
+  useEffect(() => {
+    const channel = supabase
+      .channel("announcements-realtime")
+      .on("postgres_changes",
+        { event: "INSERT", schema: "public", table: "announcements" },
+        () => { reload(); }
+      )
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, [supabase, reload]);
+
+  const post = useCallback(async (input: { title: string; body: string; target_roles: string[]; pinned: boolean }) => {
+    await q.createAnnouncement(input);
+    reload();
+  }, [reload]);
+
+  const remove = useCallback(async (id: string) => {
+    await q.deleteAnnouncement(id);
+    setData((prev) => prev.filter((a) => a.id !== id));
+  }, [setData]);
+
+  return { announcements: data, loading, post, remove, reload };
 }
