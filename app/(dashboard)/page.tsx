@@ -3,6 +3,8 @@
 import dynamic from "next/dynamic";
 import Link from "next/link";
 import { format } from "date-fns";
+import { useEffect } from "react";
+import { ArrowRight, Sparkles } from "lucide-react";
 import { StatsGrid } from "@/components/dashboard/stats-grid";
 import { WorkOrderCard } from "@/components/work-orders/work-order-card";
 import { GettingStarted } from "@/components/dashboard/getting-started";
@@ -29,6 +31,15 @@ export default function DashboardPage() {
   const { org } = useOrganization();
   const showIntegrations = can("integrations.manage");
   const now = new Date();
+
+  // Auto-start product tour when landing from /demo for the first time.
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    if (sessionStorage.getItem("rw:start_tour") !== "1") return;
+    sessionStorage.removeItem("rw:start_tour");
+    const t = setTimeout(() => window.dispatchEvent(new CustomEvent("rw:start-tour")), 1800);
+    return () => clearTimeout(t);
+  }, []);
 
   // Role-tailored home view — each role lands on what matters to them.
   // Managers/admins/viewers (and custom roles) get the full operations dashboard below.
@@ -62,6 +73,20 @@ export default function DashboardPage() {
           </p>
         </div>
       </div>
+
+      {/* Demo mode banner */}
+      {org?.is_demo && (
+        <div className="flex items-center justify-between gap-3 rounded-xl border border-indigo-500/30 bg-indigo-500/[0.07] px-4 py-3">
+          <div className="flex items-center gap-2.5 text-sm">
+            <Sparkles className="h-4 w-4 text-indigo-400 shrink-0" />
+            <span className="text-indigo-200 font-medium">You&apos;re exploring the Roomward demo.</span>
+            <span className="text-indigo-300/60 hidden sm:inline">This sandbox resets when you leave.</span>
+          </div>
+          <Link href="/signup" className="btn-primary text-xs h-8 px-3 shrink-0">
+            Get started free <ArrowRight className="h-3.5 w-3.5" />
+          </Link>
+        </div>
+      )}
 
       {/* Stats */}
       <div data-tour="stats">

@@ -213,7 +213,7 @@ export function useRecentActivity() {
 }
 
 export function useOrganization() {
-  const { data, loading, reload } = useCachedQuery<{ id: string; name: string; slug: string; settings?: unknown } | null>(
+  const { data, loading, reload } = useCachedQuery<{ id: string; name: string; slug: string; is_demo?: boolean; demo_expires_at?: string | null; settings?: unknown } | null>(
     "organization", q.fetchOrganization, null
   );
   return { org: data, loading, reload };

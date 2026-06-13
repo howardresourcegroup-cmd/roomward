@@ -35,6 +35,8 @@ export interface Organization {
   name: string;
   slug: string;
   plan: "starter" | "pro" | "enterprise";
+  is_demo?: boolean;
+  demo_expires_at?: string | null;
   settings: Record<string, unknown>;
   created_at: string;
   updated_at: string;
@@ -98,6 +100,9 @@ export interface Space {
   qr_code: string | null;
   notes: string | null;
   sq_ft?: number | null;              // manual override; null = computed from cells × floor scale
+  guest_name?: string | null;
+  checked_in_at?: string | null;
+  expected_checkout_at?: string | null;
   housekeeping_status?: HousekeepingStatus;
   occupancy?: Occupancy;
   created_at: string;

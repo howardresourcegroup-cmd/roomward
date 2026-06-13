@@ -34,12 +34,10 @@ const SOFTWARE_SCHEMA = {
   url: "https://roomward.app",
   description:
     "Roomward is hotel operations management software — work orders, housekeeping, maintenance tracking, team chat, and PMS sync in one place.",
-  offers: {
-    "@type": "Offer",
-    price: "149",
-    priceCurrency: "USD",
-    description: "Roomward Standard — per property, per month. 14-day free trial, no credit card required.",
-  },
+  offers: [
+    { "@type": "Offer", price: "149", priceCurrency: "USD", name: "Standard", description: "Per property/month, up to 25 team members. 14-day free trial." },
+    { "@type": "Offer", price: "249", priceCurrency: "USD", name: "Pro", description: "Per property/month, unlimited team members. 14-day free trial." },
+  ],
   publisher: {
     "@type": "Organization",
     name: "Howard Resource Group LLC",
@@ -150,28 +148,72 @@ export default function LandingPage() {
       </section>
 
       {/* Pricing */}
-      <section className="relative z-10 max-w-md mx-auto px-6 pb-24">
-        <div className="glass-card p-7 text-center border-indigo-500/20">
-          <p className="text-sm font-semibold text-indigo-300">Roomward Standard</p>
-          <div className="flex items-baseline justify-center gap-1 mt-3">
-            <span className="text-4xl font-bold">$149</span>
-            <span className="text-zinc-500">/mo per property</span>
-          </div>
-          <p className="text-xs text-zinc-500 mt-1">Pro $249/mo for 25+ users</p>
+      <section className="relative z-10 max-w-3xl mx-auto px-6 pb-24">
+        <div className="text-center mb-8">
+          <h2 className="text-2xl font-bold">Simple, per-property pricing</h2>
+          <p className="text-zinc-400 mt-2 text-sm">One plan includes everything. Scale up when your team does.</p>
           <a href="https://howardresourcegroup.com/business.html#hotel-stack" target="_blank" rel="noopener"
-            className="inline-flex items-center gap-1 text-xs text-indigo-400 hover:text-indigo-300 mt-1.5">
-            Save $100/mo with a Managed IT plan <ArrowRight className="h-3 w-3" />
+            className="inline-flex items-center gap-1 text-xs text-indigo-400 hover:text-indigo-300 mt-2">
+            Save $100/mo when bundled with Managed IT <ArrowRight className="h-3 w-3" />
           </a>
-          <ul className="space-y-2 mt-5 text-left">
-            {["Every feature included", "Unlimited rooms & spaces", "All integrations", "14-day free trial, no card"].map((f) => (
-              <li key={f} className="flex items-center gap-2 text-sm text-zinc-300">
-                <Check className="h-4 w-4 text-emerald-400 shrink-0" /> {f}
-              </li>
-            ))}
-          </ul>
-          <Link href="/signup" className="btn-primary w-full justify-center mt-6 h-11">
-            Start your free trial <ArrowRight className="h-4 w-4" />
-          </Link>
+        </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          {/* Standard */}
+          <div className="glass-card p-7 flex flex-col border-indigo-500/20">
+            <p className="text-sm font-semibold text-indigo-300">Standard</p>
+            <div className="flex items-baseline gap-1 mt-3">
+              <span className="text-4xl font-bold">$149</span>
+              <span className="text-zinc-500 text-sm">/mo per property</span>
+            </div>
+            <p className="text-xs text-zinc-500 mt-1">Up to 25 team members</p>
+            <ul className="space-y-2 mt-6 flex-1">
+              {[
+                "Every feature included",
+                "Unlimited rooms & spaces",
+                "Work orders, housekeeping, chat",
+                "All PMS integrations",
+                "Role-based permissions",
+              ].map((f) => (
+                <li key={f} className="flex items-center gap-2 text-sm text-zinc-300">
+                  <Check className="h-4 w-4 text-emerald-400 shrink-0" /> {f}
+                </li>
+              ))}
+            </ul>
+            <Link href="/signup" className="btn-secondary w-full justify-center mt-6 h-11">
+              Start free trial <ArrowRight className="h-4 w-4" />
+            </Link>
+            <p className="text-xs text-zinc-600 mt-2 text-center">14 days free · no credit card required</p>
+          </div>
+
+          {/* Pro */}
+          <div className="glass-card p-7 flex flex-col relative overflow-hidden border-indigo-500/40 bg-indigo-500/[0.04]">
+            <div className="absolute top-4 right-4 text-[10px] font-semibold tracking-wide text-indigo-300 bg-indigo-500/20 border border-indigo-500/30 rounded-full px-2.5 py-0.5">
+              FOR LARGER TEAMS
+            </div>
+            <p className="text-sm font-semibold text-indigo-300">Pro</p>
+            <div className="flex items-baseline gap-1 mt-3">
+              <span className="text-4xl font-bold">$249</span>
+              <span className="text-zinc-500 text-sm">/mo per property</span>
+            </div>
+            <p className="text-xs text-zinc-500 mt-1">Unlimited team members</p>
+            <ul className="space-y-2 mt-6 flex-1">
+              {[
+                "Everything in Standard",
+                "Unlimited team members",
+                "Advanced reporting & analytics",
+                "Custom roles & permissions",
+                "Priority support",
+              ].map((f) => (
+                <li key={f} className="flex items-center gap-2 text-sm text-zinc-300">
+                  <Check className="h-4 w-4 text-emerald-400 shrink-0" /> {f}
+                </li>
+              ))}
+            </ul>
+            <Link href="/signup" className="btn-primary w-full justify-center mt-6 h-11">
+              Start free trial <ArrowRight className="h-4 w-4" />
+            </Link>
+            <p className="text-xs text-zinc-600 mt-2 text-center">14 days free · no credit card required</p>
+          </div>
         </div>
       </section>
 

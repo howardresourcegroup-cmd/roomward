@@ -3,7 +3,8 @@
 import { useState, useEffect, useMemo } from "react";
 import Link from "next/link";
 import { motion } from "framer-motion";
-import { Building2, Layers, DoorClosed, Filter, LayoutGrid, Rows3 } from "lucide-react";
+import { format, formatDistanceToNow, isToday, isTomorrow } from "date-fns";
+import { Building2, Layers, DoorClosed, Filter, LayoutGrid, Rows3, User } from "lucide-react";
 import { useBuildings, useBuildingDetail, useAssets, useWorkOrders } from "@/lib/data/hooks";
 import { OccupancyBadge } from "@/components/rooms/occupancy-badge";
 import { PageLoader } from "@/components/shared/loading-spinner";
@@ -302,6 +303,50 @@ export default function PropertyPage() {
                         return sqft != null ? <Row label="Size"><span className="text-foreground">{formatSqFt(sqft)}</span></Row> : null;
                       })()}
                     </div>
+
+                    {/* Guest info — shown whenever a guest name or check-in is present */}
+                    {(selected.guest_name || selected.checked_in_at || selected.expected_checkout_at) && (
+                      <div className="space-y-2 pt-2 border-t border-border">
+                        <p className="text-[11px] text-muted-foreground uppercase tracking-wider flex items-center gap-1.5">
+                          <User className="h-3 w-3" /> Guest
+                        </p>
+                        <div className="space-y-1.5 text-xs">
+                          {selected.guest_name && (
+                            <Row label="Name"><span className="text-foreground font-medium">{selected.guest_name}</span></Row>
+                          )}
+                          {selected.checked_in_at && (
+                            <Row label="Checked in">
+                              <span className="text-foreground" title={format(new Date(selected.checked_in_at), "PPp")}>
+                                {formatDistanceToNow(new Date(selected.checked_in_at), { addSuffix: true })}
+                              </span>
+                            </Row>
+                          )}
+                          {selected.expected_checkout_at && (() => {
+                            const co = new Date(selected.expected_checkout_at);
+                            const label = isToday(co)
+                              ? `Today ${format(co, "h:mm a")}`
+                              : isTomorrow(co)
+                              ? `Tomorrow ${format(co, "h:mm a")}`
+                              : format(co, "MMM d, h:mm a");
+                            const isUrgent = isToday(co);
+                            return (
+                              <Row label="Checks out">
+                                <span className={isUrgent ? "text-amber-400 font-medium" : "text-foreground"}>{label}</span>
+                              </Row>
+                            );
+                          })()}
+                          {selected.checked_in_at && selected.expected_checkout_at && (() => {
+                            const nights = Math.round(
+                              (new Date(selected.expected_checkout_at).getTime() - new Date(selected.checked_in_at).getTime())
+                              / 86_400_000
+                            );
+                            return nights > 0
+                              ? <Row label="Nights"><span className="text-foreground">{nights}</span></Row>
+                              : null;
+                          })()}
+                        </div>
+                      </div>
+                    )}
                     {/* Assets in this room */}
                     <div className="space-y-1.5 pt-2 border-t border-border">
                       <p className="text-[11px] text-muted-foreground uppercase tracking-wider">Assets ({roomAssets.length})</p>

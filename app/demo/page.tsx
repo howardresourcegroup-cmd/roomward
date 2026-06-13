@@ -28,6 +28,8 @@ export default function DemoPage() {
         }
         const { error: rpcErr } = await supabase.rpc("start_demo");
         if (rpcErr && !existing.user?.is_anonymous) throw rpcErr;
+        // Signal dashboard to auto-start the product tour for first-time demo visitors.
+        sessionStorage.setItem("rw:start_tour", "1");
         window.location.href = "/";
       } catch (err) {
         setError(err instanceof Error ? err.message : "Couldn't start the demo.");
