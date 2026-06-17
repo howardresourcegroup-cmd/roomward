@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { usePathname } from "next/navigation";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 import { X, ArrowRight, ArrowLeft, Sparkles } from "lucide-react";
 
 // ── Interactive product tour ───────────────────────────────────────────────────
@@ -203,11 +203,8 @@ export function ProductTour() {
   const isLast = step === visibleSteps.length - 1;
 
   return (
-    <AnimatePresence>
-      {/* The entire overlay is pointer-events:none — nothing is blocked */}
-      <div className="fixed inset-0 z-[120] pointer-events-none">
-
-        {/* Spotlight hole — desktop only, visual only */}
+    <div className="fixed inset-0 z-[120] pointer-events-none">
+      {/* Spotlight hole — desktop only, visual only */}
         {!isMobile && hole && (
           <motion.div
             initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
@@ -280,8 +277,7 @@ export function ProductTour() {
             </div>
           </div>
         </motion.div>
-      </div>
-    </AnimatePresence>
+    </div>
   );
 }
 

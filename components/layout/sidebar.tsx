@@ -197,14 +197,14 @@ export function MobileSidebar() {
               exit during route change could leave it invisibly mounted, eating all
               taps on the header/hamburger. Unmounting instantly avoids that. */}
           <div
-            className="fixed inset-0 bg-black/60 z-40 md:hidden animate-fade-in"
+            className="fixed inset-0 bg-black/60 z-[130] md:hidden animate-fade-in"
             onClick={closeMobileSidebar} />
 
           {/* Drawer */}
           <motion.aside
             initial={{ x: -280 }} animate={{ x: 0 }} exit={{ x: -280 }}
             transition={{ type: "spring", damping: 30, stiffness: 300 }}
-            className="fixed left-0 top-0 h-full w-64 flex flex-col bg-card border-r border-border z-50 md:hidden"
+            className="fixed left-0 top-0 h-full w-64 flex flex-col bg-card border-r border-border z-[135] md:hidden"
           >
             <div className="flex h-14 items-center justify-between px-4 border-b border-border">
               <div className="flex items-center gap-3">
