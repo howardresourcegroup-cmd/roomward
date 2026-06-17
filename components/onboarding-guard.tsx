@@ -15,15 +15,15 @@ const SESSION_KEY = "rw_org_ok";
 
 export function OnboardingGuard({ children }: { children: React.ReactNode }) {
   const router = useRouter();
-  // Skip the Supabase round-trips if we already confirmed org this session
-  const cached = typeof sessionStorage !== "undefined" && sessionStorage.getItem(SESSION_KEY) === "1";
-  const [state, setState] = useState<"checking" | "ready" | "needs-org">(cached ? "ready" : "checking");
+  const [state, setState] = useState<"checking" | "ready" | "needs-org">("checking");
   const [orgName, setOrgName] = useState("");
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
 
   useEffect(() => {
-    if (cached) return; // already confirmed this session
+    // Skip Supabase round-trips if we already confirmed org this session.
+    // Must be in useEffect (not useState initializer) to match the server render.
+    if (sessionStorage.getItem(SESSION_KEY) === "1") { setState("ready"); return; }
     const supabase = createClient();
     (async () => {
       const { data: { session } } = await supabase.auth.getSession();
