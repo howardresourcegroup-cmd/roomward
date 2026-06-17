@@ -3,60 +3,63 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
-import { X, ArrowRight, ArrowLeft, MousePointerClick, Sparkles } from "lucide-react";
+import { X, ArrowRight, ArrowLeft, Sparkles } from "lucide-react";
 
 // ── Interactive product tour ───────────────────────────────────────────────────
-// Spotlights real UI elements (anything carrying a matching data-tour attribute),
-// walks the user through the app page by page, and advances either on "Next" or
-// when the user actually clicks the highlighted element. Start it from anywhere:
-//   window.dispatchEvent(new CustomEvent("rw:start-tour"))
+// Non-blocking: the overlay is visual-only (pointer-events: none). Users can
+// click anything at any time — the tour is a guide, not a gate.
+// On mobile: no overlay, tooltip docks to the bottom of the screen.
+// Start: window.dispatchEvent(new CustomEvent("rw:start-tour"))
 
 export const TOUR_DONE_KEY = "rw_tour_done";
 
 interface TourStep {
-  target: string;          // data-tour value to spotlight
-  path?: string;           // route the step lives on (navigates if needed)
+  target: string;
+  path?: string;
   title: string;
   body: string;
-  advanceOnClick?: boolean; // advance when the user clicks the target itself
   placement?: "bottom" | "top" | "right" | "left";
+  mobileOnly?: boolean;
+  desktopOnly?: boolean;
 }
 
 const STEPS: TourStep[] = [
   {
     target: "stats", path: "/",
     title: "Your live command center",
-    body: "These numbers update in real time — active issues, rooms online, critical alerts, and how fast your team closes work.",
+    body: "Active issues, rooms online, critical alerts, and average resolution time — all updating in real time.",
     placement: "bottom",
   },
   {
     target: "nav-property", path: "/",
     title: "Open your Property Map",
-    body: "This is the heart of Roomward — your whole property as a live floor plan. Click it to go there.",
-    advanceOnClick: true, placement: "right",
+    body: "Your whole property as a live floor plan — every room color-coded by occupancy, housekeeping, or condition.",
+    placement: "right",
+    desktopOnly: true,  // sidebar nav not visible on mobile
   },
   {
     target: "map-modes", path: "/property",
-    title: "Three ways to see every room",
-    body: "Flip between occupancy (who's in), housekeeping (what's clean), and status (what's broken). Try one.",
+    title: "Three views of every room",
+    body: "Flip between occupancy (who's in), housekeeping (what's clean), and condition (what's broken).",
     placement: "bottom",
   },
   {
     target: "map-grid", path: "/property",
     title: "Click any room to drill in",
-    body: "Every box is a real room. Click one to see its status, housekeeping state, every asset inside it, and any open issues.",
+    body: "Tap a room to see its guest, housekeeping state, every asset, and any open issues — all in one panel.",
     placement: "top",
   },
   {
     target: "nav-work-orders", path: "/property",
-    title: "Now, the work itself",
-    body: "Every issue lives in Work Orders — assigned, prioritized, and tracked to done. Click to open it.",
-    advanceOnClick: true, placement: "right",
+    title: "Track every request end-to-end",
+    body: "Work Orders holds every issue — assigned, prioritized, and tracked from open to resolved.",
+    placement: "right",
+    desktopOnly: true,
   },
   {
     target: "new-work-order", path: "/work-orders",
     title: "Log anything in seconds",
-    body: "New Work Order is always one tap away — pick the room, set a priority, assign a teammate, attach photos.",
+    body: "New Work Order is always one tap away — pick the room, set priority, assign a teammate, and attach photos.",
     placement: "bottom",
   },
 ];
@@ -67,19 +70,27 @@ export function ProductTour() {
   const router = useRouter();
   const pathname = usePathname();
   const [active, setActive] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
   const [step, setStep] = useState(0);
   const [rect, setRect] = useState<Rect | null>(null);
   const targetRef = useRef<Element | null>(null);
 
-  const current = STEPS[step];
+  // Derive the visible steps for the current screen size
+  const visibleSteps = isMobile
+    ? STEPS.filter((s) => !s.desktopOnly)
+    : STEPS.filter((s) => !s.mobileOnly);
 
-  // Start listener. The tour spotlights the desktop sidebar, so it needs md+ —
-  // on phones the targets are hidden inside the drawer and rects come back 0×0.
+  const current = visibleSteps[step];
+
   useEffect(() => {
-    const start = () => {
-      if (window.innerWidth < 768) return;
-      setStep(0); setActive(true);
-    };
+    const check = () => setIsMobile(window.innerWidth < 768);
+    check();
+    window.addEventListener("resize", check);
+    return () => window.removeEventListener("resize", check);
+  }, []);
+
+  useEffect(() => {
+    const start = () => { setStep(0); setActive(true); };
     window.addEventListener("rw:start-tour", start);
     return () => window.removeEventListener("rw:start-tour", start);
   }, []);
@@ -92,7 +103,7 @@ export function ProductTour() {
 
   const next = useCallback(() => {
     setStep((s) => {
-      if (s >= STEPS.length - 1) {
+      if (s >= visibleSteps.length - 1) {
         localStorage.setItem(TOUR_DONE_KEY, "1");
         setActive(false);
         setRect(null);
@@ -100,20 +111,22 @@ export function ProductTour() {
       }
       return s + 1;
     });
-  }, []);
+  }, [visibleSteps.length]);
 
-  // Navigate to the step's page if we're not on it
+  const prev = useCallback(() => setStep((s) => Math.max(0, s - 1)), []);
+
+  // Navigate to the step's page if needed
   useEffect(() => {
     if (!active || !current?.path) return;
     if (pathname !== current.path) router.push(current.path);
   }, [active, step, current, pathname, router]);
 
-  // Find + measure the target (poll briefly — element may still be rendering after nav)
+  // Find + measure the target
   useEffect(() => {
     if (!active || !current) return;
     let cancelled = false;
     let tries = 0;
-    setRect(null);          // drop the old spotlight while we locate the next target
+    setRect(null);
     targetRef.current = null;
 
     const measure = () => {
@@ -124,9 +137,10 @@ export function ProductTour() {
         el.scrollIntoView({ block: "nearest", behavior: "smooth" });
         const r = el.getBoundingClientRect();
         setRect({ top: r.top, left: r.left, width: r.width, height: r.height });
-      } else if (tries++ < 40) {
-        setTimeout(measure, 150); // wait for the page/element to mount
+      } else if (tries++ < 30) {
+        setTimeout(measure, 200);
       }
+      // If element not found after 30 tries, rect stays null — tooltip shows centered
     };
     measure();
 
@@ -145,101 +159,122 @@ export function ProductTour() {
     };
   }, [active, step, current, pathname]);
 
-  // Advance when the user clicks the spotlighted element itself
-  useEffect(() => {
-    if (!active || !current?.advanceOnClick) return;
-    const el = targetRef.current;
-    if (!el) return;
-    const onClick = () => setTimeout(next, 350); // let the navigation start first
-    el.addEventListener("click", onClick);
-    return () => el.removeEventListener("click", onClick);
-  }, [active, step, current, rect, next]);
-
   if (!active || !current) return null;
 
-  const pad = 8;
+  const pad = 6;
   const hole = rect
     ? { top: rect.top - pad, left: rect.left - pad, width: rect.width + pad * 2, height: rect.height + pad * 2 }
     : null;
 
   // Tooltip position
-  const tip: React.CSSProperties = { position: "fixed", zIndex: 121, maxWidth: 340 };
-  if (hole) {
-    const placement = current.placement ?? "bottom";
-    if (placement === "bottom") { tip.top = hole.top + hole.height + 12; tip.left = Math.max(12, Math.min(hole.left, window.innerWidth - 360)); }
-    if (placement === "top")    { tip.bottom = window.innerHeight - hole.top + 12; tip.left = Math.max(12, Math.min(hole.left, window.innerWidth - 360)); }
-    if (placement === "right")  { tip.top = Math.max(12, hole.top); tip.left = hole.left + hole.width + 12; }
-    if (placement === "left")   { tip.top = Math.max(12, hole.top); tip.right = window.innerWidth - hole.left + 12; }
+  const tipStyle: React.CSSProperties = { position: "fixed", zIndex: 121, maxWidth: 320 };
+  if (isMobile) {
+    // Bottom sheet on mobile — doesn't depend on target position
+    tipStyle.bottom = 16;
+    tipStyle.left = 12;
+    tipStyle.right = 12;
+    tipStyle.maxWidth = "100%";
+  } else if (hole) {
+    const p = current.placement ?? "bottom";
+    const screenW = window.innerWidth;
+    const screenH = window.innerHeight;
+    if (p === "bottom") {
+      tipStyle.top = Math.min(hole.top + hole.height + 12, screenH - 180);
+      tipStyle.left = Math.max(12, Math.min(hole.left, screenW - 340));
+    } else if (p === "top") {
+      tipStyle.bottom = Math.max(12, screenH - hole.top + 12);
+      tipStyle.left = Math.max(12, Math.min(hole.left, screenW - 340));
+    } else if (p === "right") {
+      tipStyle.top = Math.max(12, Math.min(hole.top, screenH - 200));
+      tipStyle.left = Math.min(hole.left + hole.width + 12, screenW - 340);
+    } else {
+      tipStyle.top = Math.max(12, Math.min(hole.top, screenH - 200));
+      tipStyle.right = Math.max(12, screenW - hole.left + 12);
+    }
   } else {
-    tip.top = "40%"; tip.left = "50%"; tip.transform = "translateX(-50%)";
+    // Fallback: center tooltip — no full-screen blackout
+    tipStyle.top = "30%";
+    tipStyle.left = "50%";
+    tipStyle.transform = "translateX(-50%)";
   }
+
+  const isLast = step === visibleSteps.length - 1;
 
   return (
     <AnimatePresence>
+      {/* The entire overlay is pointer-events:none — nothing is blocked */}
       <div className="fixed inset-0 z-[120] pointer-events-none">
-        {/* Dimmer with a spotlight hole. The hole area stays clickable (pointer-events pass through). */}
-        {hole ? (
+
+        {/* Spotlight hole — desktop only, visual only */}
+        {!isMobile && hole && (
           <motion.div
-            initial={{ opacity: 0 }} animate={{ opacity: 1 }}
-            className="absolute rounded-xl ring-2 ring-accent-500"
+            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+            className="absolute rounded-xl ring-2 ring-accent-500/80"
             style={{
               top: hole.top, left: hole.left, width: hole.width, height: hole.height,
-              boxShadow: "0 0 0 9999px rgba(0,0,0,0.65)",
-              transition: "top .25s ease, left .25s ease, width .25s ease, height .25s ease",
+              boxShadow: "0 0 0 9999px rgba(0,0,0,0.40)",
+              transition: "top .2s ease, left .2s ease, width .2s ease, height .2s ease",
             }}
           />
-        ) : (
-          <div className="absolute inset-0 bg-black/65" />
         )}
 
-        {/* Click-blockers around the hole so only the target is interactive */}
-        {hole && (
-          <>
-            <div className="absolute pointer-events-auto" style={{ top: 0, left: 0, right: 0, height: Math.max(0, hole.top) }} />
-            <div className="absolute pointer-events-auto" style={{ top: hole.top + hole.height, left: 0, right: 0, bottom: 0 }} />
-            <div className="absolute pointer-events-auto" style={{ top: hole.top, left: 0, width: Math.max(0, hole.left), height: hole.height }} />
-            <div className="absolute pointer-events-auto" style={{ top: hole.top, left: hole.left + hole.width, right: 0, height: hole.height }} />
-          </>
+        {/* Mobile: just a subtle ring around the target, no overlay */}
+        {isMobile && hole && (
+          <motion.div
+            initial={{ opacity: 0 }} animate={{ opacity: 1 }}
+            className="absolute rounded-xl ring-2 ring-accent-500/80 ring-offset-2"
+            style={{ top: hole.top, left: hole.left, width: hole.width, height: hole.height }}
+          />
         )}
 
-        {/* Tooltip */}
+        {/* Tooltip — pointer-events-auto so it can be interacted with */}
         <motion.div
           key={step}
-          initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
-          style={tip}
+          initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: 6 }}
+          transition={{ duration: 0.18 }}
+          style={tipStyle}
           className="pointer-events-auto glass-card p-4 shadow-2xl border-accent-500/30"
         >
+          {/* Header */}
           <div className="flex items-start justify-between gap-3">
-            <p className="text-sm font-semibold text-foreground">{current.title}</p>
-            <button onClick={finish} className="text-muted-foreground hover:text-foreground shrink-0" title="End tour">
+            <p className="text-sm font-semibold text-foreground leading-snug">{current.title}</p>
+            <button onClick={finish} title="End tour"
+              className="text-muted-foreground hover:text-foreground shrink-0 transition-colors mt-0.5">
               <X className="h-3.5 w-3.5" />
             </button>
           </div>
+
           <p className="text-xs text-muted-foreground mt-1.5 leading-relaxed">{current.body}</p>
-          {current.advanceOnClick && (
-            <p className="flex items-center gap-1.5 text-[11px] text-accent-text mt-2">
-              <MousePointerClick className="h-3.5 w-3.5" /> Click the highlighted item to continue
-            </p>
-          )}
-          <div className="flex items-center justify-between mt-3.5">
-            <span className="text-[10px] text-muted-foreground">{step + 1} of {STEPS.length}</span>
+
+          {/* Progress dots */}
+          <div className="flex items-center gap-1 mt-3">
+            {visibleSteps.map((_, i) => (
+              <button key={i} onClick={() => setStep(i)}
+                className={`h-1.5 rounded-full transition-all ${i === step ? "w-4 bg-accent-text" : "w-1.5 bg-foreground/20"}`}
+              />
+            ))}
+          </div>
+
+          {/* Controls */}
+          <div className="flex items-center justify-between mt-3">
+            <button onClick={finish}
+              className="text-[11px] text-muted-foreground hover:text-foreground transition-colors">
+              Skip tour
+            </button>
             <div className="flex items-center gap-2">
               {step > 0 && (
-                <button onClick={() => setStep((s) => Math.max(0, s - 1))}
+                <button onClick={prev}
                   className="inline-flex items-center gap-1 text-[11px] text-muted-foreground hover:text-foreground transition-colors">
                   <ArrowLeft className="h-3 w-3" /> Back
                 </button>
               )}
-              {!current.advanceOnClick && (
-                <button onClick={next} className="btn-primary h-7 px-3 text-[11px]">
-                  {step === STEPS.length - 1 ? <>Finish <Sparkles className="h-3 w-3" /></> : <>Next <ArrowRight className="h-3 w-3" /></>}
-                </button>
-              )}
-              {current.advanceOnClick && (
-                <button onClick={next} className="text-[11px] text-muted-foreground hover:text-foreground transition-colors">
-                  Skip step
-                </button>
-              )}
+              <button onClick={isLast ? finish : next}
+                className="btn-primary h-7 px-3 text-[11px]">
+                {isLast
+                  ? <><Sparkles className="h-3 w-3" /> Done</>
+                  : <>Next <ArrowRight className="h-3 w-3" /></>}
+              </button>
             </div>
           </div>
         </motion.div>
