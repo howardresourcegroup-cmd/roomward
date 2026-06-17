@@ -47,7 +47,7 @@ export function OnboardingGuard({ children }: { children: React.ReactNode }) {
       }
       setState("needs-org");
     })();
-  }, [router, cached]);
+  }, [router]);
 
   const completeSetup = async (e: React.FormEvent) => {
     e.preventDefault();
