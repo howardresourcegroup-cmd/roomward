@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { X, ArrowRight, ArrowLeft, Sparkles } from "lucide-react";
 
@@ -67,7 +67,6 @@ const STEPS: TourStep[] = [
 interface Rect { top: number; left: number; width: number; height: number }
 
 export function ProductTour() {
-  const router = useRouter();
   const pathname = usePathname();
   const [active, setActive] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
@@ -115,11 +114,14 @@ export function ProductTour() {
 
   const prev = useCallback(() => setStep((s) => Math.max(0, s - 1)), []);
 
-  // Navigate to the step's page if needed
+  // When the user navigates manually, jump to the first step that fits the new page
+  // rather than fighting them with router.push back.
   useEffect(() => {
-    if (!active || !current?.path) return;
-    if (pathname !== current.path) router.push(current.path);
-  }, [active, step, current, pathname, router]);
+    if (!active) return;
+    const matchIndex = visibleSteps.findIndex((s) => !s.path || s.path === pathname);
+    if (matchIndex !== -1 && matchIndex !== step) setStep(matchIndex);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pathname, active]);
 
   // Find + measure the target
   useEffect(() => {
