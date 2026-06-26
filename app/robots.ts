@@ -13,6 +13,10 @@ export default function robots(): MetadataRoute.Robots {
         "/hotel-operations-software",
         "/hotel-cmms-software",
         "/roommaster-integration",
+        "/eptura-integration",
+        "/opera-pms-integration",
+        "/cloudbeds-integration",
+        "/quore-alternative",
       ],
       // /demo provisions a sandbox on every visit — keep crawlers out of it
       disallow: ["/api/", "/demo", "/buildings", "/work-orders", "/housekeeping", "/settings", "/reports", "/assets", "/messages", "/technicians", "/help", "/front-desk", "/property", "/auth/"],

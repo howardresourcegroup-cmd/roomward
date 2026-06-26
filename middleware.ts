@@ -43,6 +43,10 @@ export async function middleware(request: NextRequest) {
     "/hotel-operations-software",
     "/hotel-cmms-software",
     "/roommaster-integration",
+    "/eptura-integration",
+    "/opera-pms-integration",
+    "/cloudbeds-integration",
+    "/quore-alternative",
   ]);
   const isPublicPage  = MARKETING_PAGES.has(pathname) || pathname.startsWith("/blog");
   const isApiAuth     = pathname.startsWith("/api/auth");

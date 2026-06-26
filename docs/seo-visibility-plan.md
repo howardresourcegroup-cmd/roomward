@@ -40,9 +40,16 @@ Skipped on purpose: "hotel maintenance app" (comp 0.94), "maintenance management
 
 ### The moat: integration pages
 
-Near-zero competition and matches what Roomward uniquely does (PMS sync). RoomMaster is shipped.
-**Next**: `/eptura-integration`, `/opera-pms-integration`, `/cloudbeds-integration`. Anyone
-searching "<PMS> work order integration" is a perfect-fit buyer with almost no competing pages.
+Near-zero competition and matches what Roomward uniquely does (PMS sync). Anyone searching
+"<PMS> work order integration" is a perfect-fit buyer with almost no competing pages. **Shipped:**
+`/roommaster-integration`, `/eptura-integration`, `/opera-pms-integration`, `/cloudbeds-integration`.
+**Next**: Mews, Opera Cloud, OnQ, Maestro as those connections firm up.
+
+### Comparison pages
+
+`/quore-alternative` is **shipped** — Quore has 22k/mo brand searches and alternative-seekers
+convert. **Next**: "MaintainX alternative", "UpKeep alternative", "Flexkeeping alternative",
+and a "best hotel maintenance software" roundup of our own.
 
 ## Content (blog) — buyer-intent, not Q&A
 

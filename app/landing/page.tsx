@@ -230,7 +230,11 @@ export default function LandingPage() {
             <Link href="/hotel-housekeeping-software" className="hover:text-zinc-400 transition-colors">Housekeeping software</Link>
             <Link href="/hotel-operations-software" className="hover:text-zinc-400 transition-colors">Operations software</Link>
             <Link href="/hotel-cmms-software" className="hover:text-zinc-400 transition-colors">Hotel CMMS</Link>
-            <Link href="/roommaster-integration" className="hover:text-zinc-400 transition-colors">RoomMaster integration</Link>
+            <Link href="/quore-alternative" className="hover:text-zinc-400 transition-colors">Quore alternative</Link>
+            <Link href="/roommaster-integration" className="hover:text-zinc-400 transition-colors">RoomMaster sync</Link>
+            <Link href="/eptura-integration" className="hover:text-zinc-400 transition-colors">Eptura sync</Link>
+            <Link href="/opera-pms-integration" className="hover:text-zinc-400 transition-colors">Opera PMS</Link>
+            <Link href="/cloudbeds-integration" className="hover:text-zinc-400 transition-colors">Cloudbeds</Link>
             <Link href="/blog" className="hover:text-zinc-400 transition-colors">Blog</Link>
             <Link href="/login" className="hover:text-zinc-400 transition-colors">Log in</Link>
             <Link href="/signup" className="hover:text-zinc-400 transition-colors">Start free trial</Link>
