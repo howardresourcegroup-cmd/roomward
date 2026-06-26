@@ -1,16 +1,22 @@
 "use client";
 
 import { useState, useRef, useCallback, useEffect } from "react";
+import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
 import {
-  X, ClipboardList, AlertTriangle, CheckCircle2, MapPin,
-  Wrench, ChevronRight, RefreshCw,
+  X, ClipboardList, AlertTriangle, CheckCircle2,
+  Wrench, ChevronRight, ChevronDown, RefreshCw, BedDouble, StickyNote,
 } from "lucide-react";
-import type { Floor, Space, SpaceStatus } from "@/types";
+import type { Floor, Space, SpaceStatus, WorkOrder } from "@/types";
 import { cn, SPACE_STATUS_CONFIG, timeAgo } from "@/lib/utils";
+import { fetchWorkOrdersForSpace } from "@/lib/data/queries";
 import { RoomCell } from "./room-cell";
 import { StatusLegend } from "./status-legend";
 import { Button } from "@/components/ui/button";
+
+const PRIORITY_DOT: Record<string, string> = {
+  low: "bg-zinc-400", medium: "bg-blue-400", high: "bg-orange-400", critical: "bg-red-400",
+};
 
 const CELL_W = 90;
 const CELL_H = 66;
@@ -41,8 +47,20 @@ function RoomDetailPanel({
   const statuses = Object.keys(SPACE_STATUS_CONFIG) as SpaceStatus[];
   const [rmPushing, setRmPushing] = useState(false);
   const [rmPushed, setRmPushed]   = useState(false);
+  const [showStatusList, setShowStatusList] = useState(false);
+  const [workOrders, setWorkOrders] = useState<WorkOrder[] | null>(null);
 
   const isGuestRoom = ["guest_room", "suite", "cabin"].includes(space.type);
+
+  // Load the open work orders behind this room's status ("why").
+  useEffect(() => {
+    let active = true;
+    setWorkOrders(null);
+    fetchWorkOrdersForSpace(space.id)
+      .then((wos) => active && setWorkOrders(wos))
+      .catch(() => active && setWorkOrders([]));
+    return () => { active = false; };
+  }, [space.id]);
 
   const handleStatusChange = async (status: SpaceStatus) => {
     onStatusChange?.(status);
@@ -86,32 +104,68 @@ function RoomDetailPanel({
         </button>
       </div>
 
+      {/* Scrollable body */}
+      <div className="flex-1 overflow-y-auto">
       {/* Current status */}
       <div className={cn("mx-4 mt-4 flex items-center gap-2.5 rounded-xl px-3 py-2.5 border", cfg.bg, cfg.border)}>
         <span className={cn("h-2.5 w-2.5 rounded-full shrink-0", cfg.dot)} />
-        <div>
-          <p className="text-xs text-muted-foreground">Current Status</p>
+        <div className="min-w-0">
+          <p className="text-xs text-muted-foreground">Current status</p>
           <p className={cn("text-sm font-semibold", cfg.color)}>{cfg.label}</p>
         </div>
+        <span className="text-[11px] text-muted-foreground ml-auto shrink-0">{timeAgo(space.updated_at)}</span>
       </div>
 
-      {/* Notes */}
-      {space.notes && (
-        <div className="mx-4 mt-3 p-3 rounded-lg bg-amber-500/10 border border-amber-500/20">
-          <p className="text-xs text-amber-400 leading-relaxed">{space.notes}</p>
-        </div>
-      )}
+      {/* Why this status */}
+      <div className="px-4 mt-4">
+        <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-2">Why this status</p>
 
-      {/* Meta */}
-      <div className="px-4 mt-4 space-y-2 text-xs text-muted-foreground">
-        <div className="flex items-center gap-2">
-          <MapPin className="h-3 w-3" />
-          Position ({space.position_x}, {space.position_y}) · {space.width}×{space.height} cells
-        </div>
-        <div className="flex items-center gap-2">
-          <CheckCircle2 className="h-3 w-3" />
-          Updated {timeAgo(space.updated_at)}
-        </div>
+        {/* Open work orders — the primary cause */}
+        {workOrders === null ? (
+          <p className="text-xs text-muted-foreground">Checking open work orders…</p>
+        ) : workOrders.length > 0 ? (
+          <div className="space-y-1.5">
+            {workOrders.map((wo) => (
+              <Link
+                key={wo.id}
+                href={`/work-orders/${wo.id}`}
+                className="flex items-start gap-2 rounded-lg border border-border bg-foreground/[0.02] px-3 py-2 hover:bg-foreground/[0.05] transition-colors"
+              >
+                <span className={cn("h-1.5 w-1.5 rounded-full mt-1.5 shrink-0", PRIORITY_DOT[wo.priority] ?? "bg-zinc-400")} />
+                <span className="min-w-0 flex-1">
+                  <span className="block text-xs text-foreground leading-snug">{wo.title}</span>
+                  <span className="block text-[10px] text-muted-foreground capitalize mt-0.5">
+                    {wo.priority} · {wo.status.replace(/_/g, " ")}
+                  </span>
+                </span>
+                <ChevronRight className="h-3 w-3 text-muted-foreground mt-0.5 shrink-0" />
+              </Link>
+            ))}
+          </div>
+        ) : space.status === "operational" ? (
+          <p className="text-xs text-muted-foreground">No open issues — room is operational.</p>
+        ) : (
+          <p className="text-xs text-muted-foreground">
+            No open work orders. Status was set manually{isGuestRoom ? " or via PMS sync" : ""}.
+          </p>
+        )}
+
+        {/* Contextual detail */}
+        {isGuestRoom && (space.occupancy || space.housekeeping_status) && (
+          <div className="flex items-center gap-2 mt-2 text-[11px] text-muted-foreground">
+            <BedDouble className="h-3 w-3 shrink-0" />
+            <span className="capitalize">
+              {space.occupancy ?? "—"}
+              {space.housekeeping_status ? ` · ${space.housekeeping_status.replace(/_/g, " ")}` : ""}
+            </span>
+          </div>
+        )}
+        {space.notes && (
+          <div className="flex items-start gap-2 mt-2 text-[11px] text-amber-400/90">
+            <StickyNote className="h-3 w-3 shrink-0 mt-0.5" />
+            <span className="leading-relaxed">{space.notes}</span>
+          </div>
+        )}
       </div>
 
       {/* RoomMaster push confirmation */}
@@ -128,35 +182,44 @@ function RoomDetailPanel({
         </div>
       )}
 
-      {/* Change status */}
+      {/* Change status (collapsed by default to keep the panel uncluttered) */}
       <div className="px-4 mt-4">
-        <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-2">Change Status</p>
-        <div className="space-y-1">
-          {statuses.map((s) => {
-            const sc = SPACE_STATUS_CONFIG[s];
-            const isActive = s === space.status;
-            return (
-              <button
-                key={s}
-                onClick={() => handleStatusChange(s)}
-                className={cn(
-                  "w-full flex items-center gap-2.5 rounded-lg px-3 py-2 text-xs text-left transition-all",
-                  isActive
-                    ? cn("border", sc.bg, sc.border, sc.color)
-                    : "text-muted-foreground hover:bg-foreground/[0.05] hover:text-foreground"
-                )}
-              >
-                <span className={cn("h-1.5 w-1.5 rounded-full", sc.dot)} />
-                {sc.label}
-                {isActive && <ChevronRight className="h-3 w-3 ml-auto" />}
-              </button>
-            );
-          })}
-        </div>
+        <button
+          onClick={() => setShowStatusList((v) => !v)}
+          className="w-full flex items-center justify-between text-xs font-medium text-muted-foreground uppercase tracking-wider hover:text-foreground transition-colors"
+        >
+          Change status
+          <ChevronDown className={cn("h-3.5 w-3.5 transition-transform", showStatusList && "rotate-180")} />
+        </button>
+        {showStatusList && (
+          <div className="space-y-1 mt-2">
+            {statuses.map((s) => {
+              const sc = SPACE_STATUS_CONFIG[s];
+              const isActive = s === space.status;
+              return (
+                <button
+                  key={s}
+                  onClick={() => handleStatusChange(s)}
+                  className={cn(
+                    "w-full flex items-center gap-2.5 rounded-lg px-3 py-2 text-xs text-left transition-all",
+                    isActive
+                      ? cn("border", sc.bg, sc.border, sc.color)
+                      : "text-muted-foreground hover:bg-foreground/[0.05] hover:text-foreground"
+                  )}
+                >
+                  <span className={cn("h-1.5 w-1.5 rounded-full", sc.dot)} />
+                  {sc.label}
+                  {isActive && <ChevronRight className="h-3 w-3 ml-auto" />}
+                </button>
+              );
+            })}
+          </div>
+        )}
+      </div>
       </div>
 
-      {/* Actions */}
-      <div className="px-4 mt-4 pb-4 space-y-2">
+      {/* Actions (pinned) */}
+      <div className="px-4 mt-4 pb-4 pt-2 space-y-2 border-t border-border">
         <Button
           size="sm"
           className="w-full"

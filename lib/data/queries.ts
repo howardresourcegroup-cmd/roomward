@@ -6,6 +6,7 @@
 
 import { createClient } from "@/lib/supabase/client";
 import { computeDashboardStats } from "@/lib/data/stats";
+import { deriveSpaceStatusFromWorkOrder } from "@/lib/work-orders/status";
 import type {
   Building, Floor, Space, WorkOrder, Profile, Channel, Message, Asset,
   SpaceStatus, HousekeepingStatus, WorkOrderStatus, WorkOrderPriority, AssetStatus, DashboardStats,
@@ -166,6 +167,11 @@ export async function fetchSpacesForBuilding(buildingId: string): Promise<Space[
   return (data ?? []) as Space[];
 }
 
+export async function fetchSpace(id: string): Promise<Space | null> {
+  const { data } = await sb().from("spaces").select("*").eq("id", id).single();
+  return (data as Space) ?? null;
+}
+
 export async function updateSpaceStatus(spaceId: string, status: SpaceStatus): Promise<void> {
   const { error } = await sb().from("spaces").update({ status }).eq("id", spaceId);
   if (error) throw error;
@@ -283,12 +289,38 @@ export async function createWorkOrder(input: {
   organization_id: string;
   created_by: string;
 }): Promise<WorkOrder> {
-  const { data, error } = await sb()
+  const supabase = sb();
+  const { data, error } = await supabase
     .from("work_orders")
     .insert({ ...input, status: input.assigned_to ? "assigned" : "open" })
     .select(WORK_ORDER_SELECT).single();
   if (error) throw error;
+
+  // Reflect the new issue on the room's status — but only if the room isn't
+  // already flagged ("if not already"). Best-effort: RLS may block the update
+  // for non-managers, which is fine.
+  if (input.space_id) {
+    const { data: space } = await supabase
+      .from("spaces").select("status").eq("id", input.space_id).single();
+    if (space) {
+      const next = deriveSpaceStatusFromWorkOrder(space.status as SpaceStatus, input.priority, input.category);
+      if (next) await supabase.from("spaces").update({ status: next }).eq("id", input.space_id);
+    }
+  }
+
   return data as unknown as WorkOrder;
+}
+
+// Open (unresolved) work orders for a room — the "why" behind its current status.
+export async function fetchWorkOrdersForSpace(spaceId: string): Promise<WorkOrder[]> {
+  const { data, error } = await sb()
+    .from("work_orders")
+    .select("id, title, status, priority, category, created_at")
+    .eq("space_id", spaceId)
+    .not("status", "in", "(completed,cancelled)")
+    .order("created_at", { ascending: false });
+  if (error) throw error;
+  return (data ?? []) as unknown as WorkOrder[];
 }
 
 export async function updateWorkOrderStatus(id: string, status: WorkOrderStatus): Promise<void> {

@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { ClipboardList } from "lucide-react";
+import { ClipboardList, MapPin } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -10,9 +10,9 @@ import { Textarea } from "@/components/ui/textarea";
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
-import { createWorkOrder } from "@/lib/data/queries";
+import { createWorkOrder, fetchSpace } from "@/lib/data/queries";
 import { useProfiles, useCurrentProfile } from "@/lib/data/hooks";
-import type { WorkOrderPriority } from "@/types";
+import type { WorkOrderPriority, Space } from "@/types";
 
 const CATEGORIES = [
   "General", "HVAC", "Plumbing", "Electrical", "Network / IT",
@@ -29,11 +29,15 @@ export default function NewWorkOrderPage() {
   });
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
+  const [linkedSpace, setLinkedSpace] = useState<Space | null>(null);
 
-  // Pre-fill assignee from ?assignee= (e.g. the "Assign Task" button on Technicians)
+  // Pre-fill from query params: ?assignee= (Technicians) and ?space= (floor plan).
   useEffect(() => {
-    const a = new URLSearchParams(window.location.search).get("assignee");
+    const sp = new URLSearchParams(window.location.search);
+    const a = sp.get("assignee");
     if (a) setForm((f) => ({ ...f, assigned_to: a }));
+    const space = sp.get("space");
+    if (space) fetchSpace(space).then((s) => s && setLinkedSpace(s)).catch(() => {});
   }, []);
 
   const set = (k: keyof typeof form) => (v: string) =>
@@ -55,7 +59,7 @@ export default function NewWorkOrderPage() {
         description: form.description.trim() || null,
         priority: form.priority,
         category: form.category.toLowerCase().replace(/ \/ /g, "_").replace(/ /g, "_"),
-        space_id: null,
+        space_id: linkedSpace?.id ?? null,
         assigned_to: assignee?.id ?? null,
         organization_id: me.organization_id!,
         created_by: me.id,
@@ -132,15 +136,28 @@ export default function NewWorkOrderPage() {
             </div>
           </div>
 
-          <div className="space-y-1.5">
-            <Label htmlFor="location">Location</Label>
-            <Input
-              id="location"
-              placeholder="Room 204, Cabin 3, Kitchen, Trail Head…"
-              value={form.location}
-              onChange={(e) => set("location")(e.target.value)}
-            />
-          </div>
+          {linkedSpace ? (
+            <div className="space-y-1.5">
+              <Label>Location</Label>
+              <div className="flex items-center gap-2 rounded-lg border border-indigo-500/30 bg-indigo-500/10 px-3 h-10 text-sm text-indigo-300">
+                <MapPin className="h-3.5 w-3.5 shrink-0" />
+                <span className="font-medium">{linkedSpace.name}</span>
+                <span className="text-xs text-muted-foreground ml-auto">
+                  This room&apos;s status will update automatically
+                </span>
+              </div>
+            </div>
+          ) : (
+            <div className="space-y-1.5">
+              <Label htmlFor="location">Location</Label>
+              <Input
+                id="location"
+                placeholder="Room 204, Cabin 3, Kitchen, Trail Head…"
+                value={form.location}
+                onChange={(e) => set("location")(e.target.value)}
+              />
+            </div>
+          )}
 
           <div className="space-y-1.5">
             <Label htmlFor="assign">Assign To (optional)</Label>
