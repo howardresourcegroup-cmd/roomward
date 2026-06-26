@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 #
-# FacilityFlow secret-scanning pre-commit hook (dependency-free, macOS/Linux).
+# Roomward secret-scanning pre-commit hook (dependency-free, macOS/Linux).
 # Blocks a commit if a staged change looks like it contains a credential.
 #
 # Enable once per clone:   git config core.hooksPath .githooks

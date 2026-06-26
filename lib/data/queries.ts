@@ -5,6 +5,7 @@
 // their organization. No org filtering needed in the queries themselves.
 
 import { createClient } from "@/lib/supabase/client";
+import { computeDashboardStats } from "@/lib/data/stats";
 import type {
   Building, Floor, Space, WorkOrder, Profile, Channel, Message, Asset,
   SpaceStatus, HousekeepingStatus, WorkOrderStatus, WorkOrderPriority, AssetStatus, DashboardStats,
@@ -33,6 +34,7 @@ export async function fetchBuildings(): Promise<Building[]> {
       _floor_count: bFloors.length,
       _space_count: bSpaces.length,
       _issue_count: bSpaces.filter((s) => s.status !== "operational").length,
+      _emergency_count: bSpaces.filter((s) => s.status === "emergency").length,
     } as Building;
   });
 }
@@ -436,29 +438,7 @@ export async function fetchDashboardStats(): Promise<DashboardStats> {
     supabase.from("profiles").select("role, is_available"),
   ]);
 
-  const s = spaces ?? [];
-  const wo = workOrders ?? [];
-  const p = profiles ?? [];
-  const operational = s.filter((x) => x.status === "operational").length;
-  const activeWo = wo.filter((x) => x.status !== "completed" && x.status !== "cancelled");
-  const today = new Date(); today.setHours(0, 0, 0, 0);
-
-  // Compute real avg resolution from completed orders with both timestamps
-  const resolved = wo.filter((x) => x.completed_at && x.created_at);
-  const avgResolutionHours = resolved.length
-    ? Math.round((resolved.reduce((sum, x) => {
-        return sum + (new Date(x.completed_at!).getTime() - new Date(x.created_at).getTime());
-      }, 0) / resolved.length) / 36e5 * 10) / 10
-    : 0;
-
-  return {
-    active_issues: activeWo.length,
-    operational_percent: s.length ? Math.round((operational / s.length) * 100) : 100,
-    technicians_online: p.filter((x) => x.role === "technician" && x.is_available).length,
-    critical_alerts: activeWo.filter((x) => x.priority === "critical").length,
-    completed_today: wo.filter((x) => x.completed_at && new Date(x.completed_at) >= today).length,
-    avg_resolution_hours: avgResolutionHours,
-  };
+  return computeDashboardStats(spaces ?? [], workOrders ?? [], profiles ?? []);
 }
 
 export async function fetchRecentActivity(): Promise<import("@/types").ActivityItem[]> {

@@ -1,4 +1,4 @@
--- FacilityFlow — Migration 004
+-- Roomward — Migration 004
 -- Self-serve onboarding. When a new user signs up they have a profile but no
 -- organization. This SECURITY DEFINER function creates their org, seeds the
 -- default roles + permissions, and makes them the Administrator — all scoped

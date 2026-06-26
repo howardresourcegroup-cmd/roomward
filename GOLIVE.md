@@ -1,6 +1,6 @@
-# FacilityFlow — Go-Live Checklist
+# Roomward — Go-Live Checklist
 
-Current state and the exact steps to take FacilityFlow from **demo mode** to a
+Current state and the exact steps to take Roomward from **demo mode** to a
 **live, multi-user, persistent** production app.
 
 ---

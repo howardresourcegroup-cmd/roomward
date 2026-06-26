@@ -1,4 +1,4 @@
--- FacilityFlow — Initial Schema
+-- Roomward — Initial Schema
 -- Run this in your Supabase SQL editor
 
 create extension if not exists "uuid-ossp";

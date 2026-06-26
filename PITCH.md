@@ -1,6 +1,6 @@
-# FacilityFlow — Internal Pitch Kit (Coral Hospitality)
+# Roomward — Internal Pitch Kit (Coral Hospitality)
 
-A ready-to-adapt pack for presenting FacilityFlow internally at Coral. Three parts:
+A ready-to-adapt pack for presenting Roomward internally at Coral. Three parts:
 1. One-page executive summary
 2. Slide-by-slide deck outline
 3. 5-minute live demo script
@@ -22,7 +22,7 @@ Out-of-service room-nights are lost revenue, and slow maintenance shows up in gu
 reviews. A faster, more visible maintenance operation directly protects revenue and
 guest satisfaction.
 
-**The solution — FacilityFlow**
+**The solution — Roomward**
 A single operational command center for a property:
 - **Live floor plans** — every room color-coded by status, top-down, at a glance
 - **Work orders** — create, assign, photo-document, and close issues with full history
@@ -43,7 +43,7 @@ work-order resolution time and out-of-service room-nights. Low risk, fully measu
 
 ## 2) Deck Outline (8–10 slides)
 
-1. **Title** — FacilityFlow: the operational command center for our properties.
+1. **Title** — Roomward: the operational command center for our properties.
 2. **The problem** — One real example: an issue at Amicalola today, and every place
    it has to be tracked. (Use a real recent incident if you can.)
 3. **What it costs us** — Out-of-service room-nights = lost revenue; slow fixes = review
@@ -84,7 +84,7 @@ work-order resolution time and out-of-service room-nights. Low risk, fully measu
 
 ## ROI Framing (fill in real numbers)
 
-| Lever | How FacilityFlow helps |
+| Lever | How Roomward helps |
 |---|---|
 | Out-of-service room-nights | Faster resolution → rooms back in inventory sooner → recovered revenue |
 | Guest satisfaction / reviews | Issues fixed before they escalate to complaints |

@@ -26,7 +26,19 @@ export type WorkOrderStatus =
 
 export type WorkOrderPriority = "low" | "medium" | "high" | "critical";
 
-export type UserRole = "admin" | "manager" | "technician" | "viewer" | "hr";
+// Canonical role slugs, matching the `roles` table (migration 003) plus `hr`
+// (migration 014). The legacy `profiles.role` text column may still hold
+// "technician" for field maintenance staff (demo seed + team-invite path) —
+// treat it as an alias of "maintenance". See isMaintenanceRole() in lib/permissions.
+export type UserRole =
+  | "admin"
+  | "manager"
+  | "maintenance"
+  | "housekeeping"
+  | "front_desk"
+  | "viewer"
+  | "hr"
+  | "technician"; // legacy alias of "maintenance"
 
 export type AssetStatus = "operational" | "degraded" | "failed" | "maintenance";
 
@@ -73,6 +85,7 @@ export interface Building {
   _floor_count?: number;
   _space_count?: number;
   _issue_count?: number;
+  _emergency_count?: number;
 }
 
 export interface Floor {

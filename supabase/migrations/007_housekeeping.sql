@@ -1,4 +1,4 @@
--- FacilityFlow — Migration 007
+-- Roomward — Migration 007
 -- Housekeeping status: a separate dimension from maintenance/operational status.
 -- A room can be clean but need maintenance, or dirty but mechanically fine.
 -- Lifecycle: dirty → in_progress → cleaned → ready  (+ out_of_service)

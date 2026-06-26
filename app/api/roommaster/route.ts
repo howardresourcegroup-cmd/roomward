@@ -3,29 +3,7 @@ export const runtime = "edge";
 import { NextRequest, NextResponse } from "next/server";
 import { getAuthedUser } from "@/lib/server/auth";
 import type { SpaceStatus } from "@/types";
-
-// ─── RoomMaster status mapping ─────────────────────────────────────────────
-const RM_STATUS_MAP: Record<string, { ff_status: SpaceStatus; create_wo: boolean }> = {
-  "1": { ff_status: "operational",       create_wo: false }, // Clean
-  "2": { ff_status: "cleaning_required", create_wo: true  }, // Dirty
-  "3": { ff_status: "operational",       create_wo: false }, // Inspected
-  "4": { ff_status: "offline",           create_wo: true  }, // Out of Service
-  "5": { ff_status: "operational",       create_wo: false }, // Do Not Disturb
-  "6": { ff_status: "cleaning_required", create_wo: true  }, // Occupied Dirty
-  "7": { ff_status: "operational",       create_wo: false }, // Occupied Clean
-  "8": { ff_status: "inspection_due",    create_wo: true  }, // Pickup
-  "9": { ff_status: "needs_maintenance", create_wo: true  }, // Maintenance
-};
-
-// Roomward status → RoomMaster status code
-const FF_TO_RM: Record<SpaceStatus, string> = {
-  operational:       "1", // Clean
-  cleaning_required: "2", // Dirty
-  needs_maintenance: "9", // Maintenance
-  offline:           "4", // Out of Service
-  inspection_due:    "8", // Pickup
-  emergency:         "4", // Out of Service (closest equivalent)
-};
+import { RM_STATUS_MAP, mapRoomMasterStatus, ffStatusToRmCode } from "@/lib/integrations/roommaster";
 
 // ─── Mock RoomMaster room data ─────────────────────────────────────────────
 const MOCK_RM_ROOMS = [
@@ -62,7 +40,7 @@ export async function GET(request: NextRequest) {
   const format = searchParams.get("format") ?? "json";
 
   const rooms = MOCK_RM_ROOMS.map((r) => {
-    const mapping = RM_STATUS_MAP[r.rm_status] ?? { ff_status: "operational" as SpaceStatus, create_wo: false };
+    const mapping = mapRoomMasterStatus(r.rm_status);
     return {
       room_number: r.room,
       pms_status: r.rm_label,
@@ -117,7 +95,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "room_number and ff_status required" }, { status: 400 });
     }
 
-    const rm_code = FF_TO_RM[ff_status] ?? "1";
+    const rm_code = ffStatusToRmCode(ff_status);
 
     // TODO in production: call real RoomMaster API here
     // const rmRes = await fetch(`${process.env.RM_API_URL}/rooms/${room_number}/status`, {
@@ -145,7 +123,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Missing room_number or status_code" }, { status: 400 });
     }
     const rm  = MOCK_RM_ROOMS.find((r) => r.room === room_number);
-    const map = RM_STATUS_MAP[status_code] ?? { ff_status: "operational" as SpaceStatus, create_wo: false };
+    const map = mapRoomMasterStatus(status_code);
     return NextResponse.json({
       received: true, room_number,
       pms_status: status_label ?? status_code,
@@ -158,7 +136,7 @@ export async function POST(request: NextRequest) {
 
   // ── Full sync pull ────────────────────────────────────────────────────────
   const rooms = MOCK_RM_ROOMS.map((r) => {
-    const mapping = RM_STATUS_MAP[r.rm_status] ?? { ff_status: "operational" as SpaceStatus, create_wo: false };
+    const mapping = mapRoomMasterStatus(r.rm_status);
     return {
       room_number: r.room,
       pms_status: r.rm_label,

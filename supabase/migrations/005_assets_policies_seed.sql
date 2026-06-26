@@ -1,4 +1,4 @@
--- FacilityFlow — Migration 005
+-- Roomward — Migration 005
 -- Assets RLS policies (table had RLS on but no policies → deny-all) + demo seed.
 -- Run AFTER 004.
 

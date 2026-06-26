@@ -1,4 +1,4 @@
--- FacilityFlow — Migration 002
+-- Roomward — Migration 002
 -- Team chat (encrypted at rest) + seed data for Amicalola Falls demo
 -- Run AFTER 001_initial_schema.sql
 

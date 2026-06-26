@@ -25,3 +25,6 @@ yarn-error.log*
 
 # TypeScript incremental build cache (generated)
 tsconfig.tsbuildinfo
+
+# Local Claude Code agent settings (machine-specific)
+.claude/

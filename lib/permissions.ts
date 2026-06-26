@@ -84,6 +84,15 @@ export const ALL_PERMISSIONS: string[] = PERMISSION_CATALOG.flatMap((g) =>
   g.permissions.map((p) => p.key)
 );
 
+// ─── Role-slug helpers ────────────────────────────────────────────────────────
+// The roles table uses the slug "maintenance" for field techs, but the legacy
+// profiles.role text column historically stored "technician" (demo seed +
+// team-invite path). Treat them as equivalent so counts/filters never miss one.
+// Single source of truth — use this instead of inline `role === "technician"`.
+export function isMaintenanceRole(role?: string | null): boolean {
+  return role === "maintenance" || role === "technician";
+}
+
 // Role accent colors used in the UI
 export const ROLE_COLORS: Record<string, { bg: string; text: string; border: string; dot: string }> = {
   red:    { bg: "bg-red-500/15",    text: "text-red-400",    border: "border-red-500/30",    dot: "bg-red-400" },

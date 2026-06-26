@@ -1,4 +1,4 @@
-// FacilityFlow — Supabase seed script
+// Roomward — Supabase seed script
 // Seeds the Grandview Falls demo org with real, database-backed data.
 //
 // Run locally (your service_role key stays on your machine):
@@ -127,7 +127,7 @@ const MESSAGES = [
 // ════════════════════════════════════════════════════════════════════════════
 async function main() {
   const wipe = process.argv.includes("--wipe");
-  console.log(`\n⚡ FacilityFlow seed → ${URL}\n`);
+  console.log(`\n⚡ Roomward seed → ${URL}\n`);
 
   // 1. Org
   await db.from("organizations").upsert({ id: ORG_ID, name: "Grandview Resort & Lodge", slug: "amicalola-falls", plan: "pro" });

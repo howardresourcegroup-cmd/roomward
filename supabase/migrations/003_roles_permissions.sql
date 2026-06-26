@@ -1,4 +1,4 @@
--- FacilityFlow — Migration 003
+-- Roomward — Migration 003
 -- Modular role-based access control (RBAC).
 -- Roles are org-scoped and fully configurable; permissions are a fixed catalog
 -- of granular keys that each role can be granted or denied.

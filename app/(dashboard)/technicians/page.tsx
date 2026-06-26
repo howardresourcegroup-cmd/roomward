@@ -16,6 +16,7 @@ import {
 } from "@/components/ui/select";
 import { EmptyState } from "@/components/shared/empty-state";
 import { useProfiles, useWorkOrders, usePermissions, useRoles } from "@/lib/data/hooks";
+import { isMaintenanceRole } from "@/lib/permissions";
 import { cn, getInitials } from "@/lib/utils";
 import type { Profile, WorkOrder } from "@/types";
 
@@ -111,7 +112,7 @@ export default function TechniciansPage() {
   const { workOrders } = useWorkOrders();
   const { can } = usePermissions();
   const [showInvite, setShowInvite] = useState(false);
-  const technicians = profiles.filter((p) => p.role === "technician" || p.role === "manager");
+  const technicians = profiles.filter((p) => isMaintenanceRole(p.role) || p.role === "manager");
   const available = technicians.filter((t) => t.is_available).length;
   const busy = technicians.filter((t) => !t.is_available).length;
 

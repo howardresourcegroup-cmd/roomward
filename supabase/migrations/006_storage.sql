@@ -1,4 +1,4 @@
--- FacilityFlow — Migration 006
+-- Roomward — Migration 006
 -- Storage bucket for work-order photos + access policies.
 -- Run AFTER 005.
 
