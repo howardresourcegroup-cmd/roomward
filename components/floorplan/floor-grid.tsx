@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useCallback } from "react";
+import { useState, useRef, useCallback, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   X, ClipboardList, AlertTriangle, CheckCircle2, MapPin,
@@ -21,6 +21,9 @@ interface FloorGridProps {
   spaces: Space[];
   onStatusChange?: (spaceId: string, status: SpaceStatus) => void;
   onCreateWorkOrder?: (spaceId: string) => void;
+  // External focus request (e.g. clicking a room in the building overview).
+  // `n` is a nonce so re-requesting the same room re-opens its panel.
+  focus?: { id: string; n: number };
 }
 
 function RoomDetailPanel({
@@ -178,9 +181,19 @@ function RoomDetailPanel({
   );
 }
 
-export function FloorGrid({ floor, spaces, onStatusChange, onCreateWorkOrder }: FloorGridProps) {
+export function FloorGrid({ floor, spaces, onStatusChange, onCreateWorkOrder, focus }: FloorGridProps) {
   const [selectedSpace, setSelectedSpace] = useState<Space | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
+
+  // Open the requested room's panel when an external focus arrives. Read spaces
+  // from a ref so live status updates don't re-trigger this and reopen the panel.
+  const spacesRef = useRef(spaces);
+  spacesRef.current = spaces;
+  useEffect(() => {
+    if (!focus) return;
+    const match = spacesRef.current.find((s) => s.id === focus.id);
+    if (match) setSelectedSpace(match);
+  }, [focus]);
 
   const gridW = floor.grid_cols * CELL_W + (floor.grid_cols - 1) * GAP;
   const gridH = floor.grid_rows * CELL_H + (floor.grid_rows - 1) * GAP;

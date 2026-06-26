@@ -204,27 +204,33 @@ export function ProductTour() {
 
   return (
     <div className="fixed inset-0 z-[120] pointer-events-none">
-      {/* Spotlight hole — desktop only, visual only */}
-        {!isMobile && hole && (
+      {/* Spotlight — dims the rest of the page and wraps the target in a glowing
+          accent ring so it's obvious what each step is pointing at. Visual only:
+          the whole layer is pointer-events-none, so the user can still tap the
+          highlighted element (works the same on desktop and mobile). */}
+      {hole && (
+        <>
           <motion.div
             initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-            className="absolute rounded-xl ring-2 ring-accent-500/80"
+            className="absolute rounded-xl"
             style={{
               top: hole.top, left: hole.left, width: hole.width, height: hole.height,
-              boxShadow: "0 0 0 9999px rgba(0,0,0,0.40)",
-              transition: "top .2s ease, left .2s ease, width .2s ease, height .2s ease",
+              boxShadow: `0 0 0 9999px rgba(2,3,12,${isMobile ? 0.55 : 0.68}), 0 0 0 3px rgb(var(--accent-400) / 0.95), 0 0 32px 7px rgb(var(--accent-500) / 0.55)`,
+              transition: "top .25s ease, left .25s ease, width .25s ease, height .25s ease",
             }}
           />
-        )}
-
-        {/* Mobile: just a subtle ring around the target, no overlay */}
-        {isMobile && hole && (
+          {/* Pulsing ring to pull the eye to the target */}
           <motion.div
-            initial={{ opacity: 0 }} animate={{ opacity: 1 }}
-            className="absolute rounded-xl ring-2 ring-accent-500/80 ring-offset-2"
-            style={{ top: hole.top, left: hole.left, width: hole.width, height: hole.height }}
+            className="absolute rounded-xl"
+            style={{
+              top: hole.top, left: hole.left, width: hole.width, height: hole.height,
+              boxShadow: "0 0 0 2px rgb(var(--accent-300) / 0.9)",
+            }}
+            animate={{ opacity: [0.9, 0, 0.9], scale: [1, 1.05, 1] }}
+            transition={{ duration: 1.8, repeat: Infinity, ease: "easeInOut" }}
           />
-        )}
+        </>
+      )}
 
         {/* Tooltip — pointer-events-auto so it can be interacted with */}
         <motion.div
@@ -233,11 +239,19 @@ export function ProductTour() {
           exit={{ opacity: 0, y: 6 }}
           transition={{ duration: 0.18 }}
           style={tipStyle}
-          className="pointer-events-auto glass-card p-4 shadow-2xl border-accent-500/30"
+          className="pointer-events-auto glass-card p-4 shadow-2xl border-accent-500/50 ring-1 ring-accent-500/20"
         >
           {/* Header */}
           <div className="flex items-start justify-between gap-3">
-            <p className="text-sm font-semibold text-foreground leading-snug">{current.title}</p>
+            <div className="min-w-0">
+              <div className="flex items-center gap-1.5 mb-1">
+                <Sparkles className="h-3 w-3 text-accent-text shrink-0" />
+                <span className="text-[10px] font-semibold uppercase tracking-wider text-accent-text">
+                  Step {step + 1} of {visibleSteps.length}
+                </span>
+              </div>
+              <p className="text-sm font-semibold text-foreground leading-snug">{current.title}</p>
+            </div>
             <button onClick={finish} title="End tour"
               className="text-muted-foreground hover:text-foreground shrink-0 transition-colors mt-0.5">
               <X className="h-3.5 w-3.5" />

@@ -8,6 +8,7 @@ import { ArrowRight, Sparkles } from "lucide-react";
 import { StatsGrid } from "@/components/dashboard/stats-grid";
 import { WorkOrderCard } from "@/components/work-orders/work-order-card";
 import { GettingStarted } from "@/components/dashboard/getting-started";
+import { WELCOME_SEEN_KEY } from "@/components/welcome-modal";
 import { MOCK_STATS } from "@/lib/mock-data";
 import { useWorkOrders, useDashboardStats, useCurrentProfile, usePermissions, useRecentActivity, useOrganization, useBuildings } from "@/lib/data/hooks";
 
@@ -37,6 +38,10 @@ export default function DashboardPage() {
     if (typeof window === "undefined") return;
     if (sessionStorage.getItem("rw:start_tour") !== "1") return;
     sessionStorage.removeItem("rw:start_tour");
+    // If the welcome modal hasn't been dismissed yet, it's about to show and will
+    // offer the tour via its own "Show me around" button. Auto-starting here too
+    // would run two intros at once, so let the modal own the hand-off.
+    if (localStorage.getItem(WELCOME_SEEN_KEY) !== "1") return;
     const t = setTimeout(() => window.dispatchEvent(new CustomEvent("rw:start-tour")), 1800);
     return () => clearTimeout(t);
   }, []);

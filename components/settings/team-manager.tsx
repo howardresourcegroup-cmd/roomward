@@ -3,6 +3,8 @@
 import { useState, useCallback } from "react";
 import { Plus, Trash2, UserCog, Copy, Check, Loader2, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { toast } from "@/components/ui/toast";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { Input } from "@/components/ui/input";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import {
@@ -23,6 +25,7 @@ export function TeamManager() {
   const [search, setSearch] = useState("");
   const [showInvite, setShowInvite] = useState(false);
   const [removingId, setRemovingId] = useState<string | null>(null);
+  const [pendingRemove, setPendingRemove] = useState<Profile | null>(null);
   const [changingRole, setChangingRole] = useState<Profile | null>(null);
   const [, setTick] = useState(0);
   const refresh = useCallback(() => setTick(t => t + 1), []);
@@ -31,17 +34,20 @@ export function TeamManager() {
     !search || p.full_name?.toLowerCase().includes(search.toLowerCase()) || p.email?.toLowerCase().includes(search.toLowerCase())
   );
 
-  const handleRemove = async (userId: string) => {
-    if (!confirm("Remove this team member? They will lose access immediately.")) return;
+  const confirmRemove = async () => {
+    if (!pendingRemove) return;
+    const userId = pendingRemove.id;
     setRemovingId(userId);
     try {
-      await fetch("/api/team/remove", {
+      const res = await fetch("/api/team/remove", {
         method: "POST", credentials: "same-origin",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ userId }),
       });
+      if (!res.ok) throw new Error();
       refresh();
-    } catch { /* ignore */ }
+      setPendingRemove(null);
+    } catch { toast.error("Couldn't remove the team member. Please try again."); }
     setRemovingId(null);
   };
 
@@ -86,7 +92,7 @@ export function TeamManager() {
                 <Button
                   size="icon" variant="ghost"
                   className="h-7 w-7 text-red-400 hover:text-red-300 hover:bg-red-500/10"
-                  onClick={() => handleRemove(profile.id)}
+                  onClick={() => setPendingRemove(profile)}
                   disabled={removingId === profile.id}
                   title="Remove from organization"
                 >
@@ -113,6 +119,17 @@ export function TeamManager() {
           onDone={() => { setChangingRole(null); refresh(); }}
         />
       )}
+
+      <ConfirmDialog
+        open={!!pendingRemove}
+        onOpenChange={(o) => !o && setPendingRemove(null)}
+        title={`Remove ${pendingRemove?.full_name ?? "this member"}?`}
+        description="They'll lose access to this organization immediately. This cannot be undone."
+        confirmLabel="Remove member"
+        destructive
+        loading={!!removingId}
+        onConfirm={confirmRemove}
+      />
     </div>
   );
 }

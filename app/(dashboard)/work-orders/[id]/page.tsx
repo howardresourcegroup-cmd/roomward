@@ -9,6 +9,7 @@ import {
   CheckCircle2, Clock,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { toast } from "@/components/ui/toast";
 import { Textarea } from "@/components/ui/textarea";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Separator } from "@/components/ui/separator";
@@ -48,7 +49,7 @@ export default function WorkOrderDetailPage({ params }: { params: Promise<{ id: 
     try {
       const next = await uploadWorkOrderPhoto(id, file, photos ?? order?.photos ?? []);
       setPhotos(next);
-    } catch { /* ignore */ }
+    } catch { toast.error("Couldn't upload photo. Please try again."); }
     setUploading(false);
     if (fileRef.current) fileRef.current.value = "";
   };
@@ -56,7 +57,8 @@ export default function WorkOrderDetailPage({ params }: { params: Promise<{ id: 
   const handleAssign = async (profileId: string) => {
     const p = profiles.find((x) => x.id === profileId);
     setAssigneeOverride(p ? { id: p.id, full_name: p.full_name, role: p.role } : null);
-    try { await assignWorkOrder(id, profileId || null); } catch { /* ignore */ }
+    try { await assignWorkOrder(id, profileId || null); }
+    catch { toast.error("Couldn't update the assignee. Please try again."); }
   };
 
   // Load persisted comments
@@ -72,7 +74,7 @@ export default function WorkOrderDetailPage({ params }: { params: Promise<{ id: 
       const saved = await addComment(id, comment.trim());
       setComments((prev) => [...prev, saved as CommentRow]);
       setComment("");
-    } catch { /* ignore */ }
+    } catch { toast.error("Couldn't post your update. Please try again."); }
     setSubmitting(false);
   };
 

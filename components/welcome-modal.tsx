@@ -8,7 +8,8 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { startProductTour } from "@/components/product-tour";
 
-const STORE_KEY = "ff-welcome-seen";
+export const WELCOME_SEEN_KEY = "ff-welcome-seen";
+const STORE_KEY = WELCOME_SEEN_KEY;
 
 const SLIDES = [
   { icon: Zap, color: "text-indigo-400", bg: "bg-indigo-500/15", title: "Welcome to Roomward", body: "Your operational command center for physical spaces. Take a 60-second hands-on tour — we'll walk you through the real app, page by page." },

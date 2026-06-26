@@ -122,9 +122,19 @@ export function BuildingStack({
 
               {/* Issue summary */}
               {issues.length > 0 && (
-                <p className="text-[10px] text-muted-foreground mt-2">
-                  {issues.length} {issues.length === 1 ? "space needs" : "spaces need"} attention
-                </p>
+                <div className="mt-2 space-y-0.5">
+                  <p className="text-[10px] text-muted-foreground">
+                    {issues.length} {issues.length === 1 ? "space needs" : "spaces need"} attention
+                  </p>
+                  {issues.map((s) => {
+                    const cfg = SPACE_STATUS_CONFIG[s.status];
+                    return (
+                      <p key={s.id} className={cn("text-[10px] font-medium", cfg.color)}>
+                        {s.name} — {cfg.label}
+                      </p>
+                    );
+                  })}
+                </div>
               )}
             </motion.div>
           );

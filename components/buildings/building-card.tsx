@@ -5,6 +5,7 @@ import Link from "next/link";
 import { motion } from "framer-motion";
 import { Layers, Grid3x3, AlertTriangle, ArrowRight, MoreHorizontal, Pencil, Trash2, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { toast } from "@/components/ui/toast";
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter,
 } from "@/components/ui/dialog";
@@ -28,7 +29,9 @@ interface BuildingCardProps {
 
 export function BuildingCard({ building, index = 0, onDelete, onUpdate, canManage }: BuildingCardProps) {
   const issueCount = building._issue_count ?? 0;
+  const emergencyCount = building._emergency_count ?? 0;
   const hasIssues = issueCount > 0;
+  const hasEmergency = emergencyCount > 0;
   const [menuOpen, setMenuOpen] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
@@ -108,11 +111,19 @@ export function BuildingCard({ building, index = 0, onDelete, onUpdate, canManag
 
         <div className={cn(
           "flex items-center gap-2 rounded-lg px-3 py-2 text-xs font-medium border",
-          hasIssues
+          hasEmergency
+            ? "bg-red-500/10 border-red-500/30 text-red-400"
+            : hasIssues
             ? "bg-amber-500/10 border-amber-500/20 text-amber-400"
             : "bg-emerald-500/10 border-emerald-500/20 text-emerald-400"
         )}>
-          {hasIssues ? (
+          {hasEmergency ? (
+            <>
+              <AlertTriangle className="h-3 w-3 animate-pulse" />
+              {emergencyCount} emergenc{emergencyCount !== 1 ? "ies" : "y"}
+              {issueCount > emergencyCount && ` · ${issueCount - emergencyCount} other issue${issueCount - emergencyCount !== 1 ? "s" : ""}`}
+            </>
+          ) : hasIssues ? (
             <><AlertTriangle className="h-3 w-3" />{issueCount} active issue{issueCount !== 1 ? "s" : ""}</>
           ) : (
             <><span className="h-2 w-2 rounded-full bg-emerald-400" />All systems operational</>
@@ -142,9 +153,9 @@ export function BuildingCard({ building, index = 0, onDelete, onUpdate, canManag
                 disabled={deleting}
                 onClick={async () => {
                   setDeleting(true);
-                  try { await deleteBuilding(building.id); onDelete?.(building.id); }
-                  catch { /* ignore */ }
-                  setDeleting(false); setConfirmDelete(false);
+                  try { await deleteBuilding(building.id); onDelete?.(building.id); setConfirmDelete(false); }
+                  catch { toast.error("Couldn't delete the building. Please try again."); }
+                  setDeleting(false);
                 }}
               >
                 {deleting ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Trash2 className="h-3.5 w-3.5" />}
@@ -176,7 +187,7 @@ function EditBuildingModal({ building, onClose, onSaved }: {
     if (!form.name.trim()) return;
     setSaving(true);
     try { await updateBuilding(building.id, form); onSaved(form); }
-    catch { /* ignore */ }
+    catch { toast.error("Couldn't save changes. Please try again."); }
     setSaving(false);
   };
 

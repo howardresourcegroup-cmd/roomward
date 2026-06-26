@@ -10,6 +10,7 @@ import type { Floor, Space } from "@/types";
 import { cn, SPACE_STATUS_CONFIG, spaceSqFt, formatSqFt } from "@/lib/utils";
 import { createSpace, deleteSpace, updateSpace, updateFloorGrid, bulkCreateSpaces } from "@/lib/data/queries";
 import { Button } from "@/components/ui/button";
+import { toast } from "@/components/ui/toast";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -230,7 +231,7 @@ export function FloorBuilder({ floor, spaces, onAdd, onAddMany, onRemove, onPatc
       const space=await createSpace({floor_id:floor.id,name,type:stampType,position_x:r.x,position_y:r.y,width:r.w,height:r.h});
       onAdd(space);
       setStampCounter(c=>c+1);
-    }catch{/*ignore*/}
+    }catch{toast.error("Couldn't add the room. Please try again.");}
     setStampSaving(false);
   },[evCell,cols,rows,spaces,stampType,stampPrefix,stampCounter,stampSaving,floor.id,onAdd]);
 
@@ -299,7 +300,7 @@ export function FloorBuilder({ floor, spaces, onAdd, onAddMany, onRemove, onPatc
 
   const saveNew=async()=>{
     if(!pending||!newName.trim())return;setSaving(true);
-    try{const s=await createSpace({floor_id:floor.id,name:newName.trim(),type:newType,position_x:pending.x,position_y:pending.y,width:pending.w,height:pending.h});onAdd(s);setPending(null);setNewName("");}catch{}
+    try{const s=await createSpace({floor_id:floor.id,name:newName.trim(),type:newType,position_x:pending.x,position_y:pending.y,width:pending.w,height:pending.h});onAdd(s);setPending(null);setNewName("");}catch{toast.error("Couldn't create the room. Please try again.");}
     setSaving(false);
   };
   const saveEdit=async()=>{
@@ -316,7 +317,7 @@ export function FloorBuilder({ floor, spaces, onAdd, onAddMany, onRemove, onPatc
   };
   const deleteSelected=async()=>{
     if(!selectedId)return;onRemove(selectedId);setSelectedId(null);
-    await deleteSpace(selectedId).catch(()=>{});
+    await deleteSpace(selectedId).catch(()=>toast.error("Couldn't delete the room. Please try again."));
   };
   const applyGridSize=async()=>{
     const nc=Math.max(4,Math.min(40,parseInt(colsInput)||cols));

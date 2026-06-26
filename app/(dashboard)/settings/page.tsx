@@ -5,6 +5,7 @@ import { Building2, Users, Bell, Zap, Shield, ChevronRight, KeyRound, Check, Cre
 import { useTheme, ACCENTS, type AccentKey } from "@/components/theme-provider";
 import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
+import { toast } from "@/components/ui/toast";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
@@ -52,7 +53,7 @@ export default function SettingsPage() {
   const saveOrg = async () => {
     setSaving(true); setSaved(false);
     try { await updateOrganization({ name: org.name }); setSaved(true); setTimeout(() => setSaved(false), 2000); }
-    catch { /* ignore */ }
+    catch { toast.error("Couldn't save settings. Please try again."); }
     setSaving(false);
   };
 

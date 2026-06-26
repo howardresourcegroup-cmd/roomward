@@ -7,6 +7,7 @@ import {
   Wrench, Sparkles, WifiOff, ExternalLink, RotateCcw,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { toast } from "@/components/ui/toast";
 import { useDataStore, type RoomMasterChange } from "@/lib/store/data-store";
 import { cn, SPACE_STATUS_CONFIG, timeAgo } from "@/lib/utils";
 import type { SpaceStatus } from "@/types";
@@ -244,7 +245,7 @@ export function RoomMasterPanel() {
   );
 }
 
-// ─── Other PMS integrations (coming soon) ─────────────────────────────────────
+// ─── Other PMS integrations ───────────────────────────────────────────────────
 export function IntegrationsPanel() {
   const OTHER_INTEGRATIONS = [
     { name: "Eptura Asset",logo: "Ep", desc: "CMMS — work orders + assets", status: "available" },
@@ -255,6 +256,14 @@ export function IntegrationsPanel() {
     { name: "Mews",        logo: "Mw", desc: "Mews PMS",                   status: "coming_soon" },
   ];
 
+  const [requested, setRequested] = useState<string[]>([]);
+
+  const requestSetup = (name: string) => {
+    if (requested.includes(name)) return;
+    setRequested((prev) => [...prev, name]);
+    toast.success(`We'll connect ${name} for you — our team will reach out to finish setup.`);
+  };
+
   return (
     <div className="glass-card p-5">
       <div className="flex items-center justify-between mb-4">
@@ -262,36 +271,49 @@ export function IntegrationsPanel() {
           <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">PMS Integrations</p>
           <p className="text-sm font-semibold text-foreground mt-0.5">Connect Your PMS</p>
         </div>
-        <a href="#" className="text-xs text-indigo-400 hover:text-indigo-300 flex items-center gap-1 transition-colors">
-          View all <ExternalLink className="h-3 w-3" />
-        </a>
+        <button
+          onClick={() => toast.info("Don't see your PMS? Request it and our team will set up the connection.")}
+          className="text-xs text-indigo-400 hover:text-indigo-300 flex items-center gap-1 transition-colors"
+        >
+          Request another <ExternalLink className="h-3 w-3" />
+        </button>
       </div>
 
       <div className="grid grid-cols-2 gap-2">
-        {OTHER_INTEGRATIONS.map((i) => (
-          <button
-            key={i.name}
-            disabled={i.status === "coming_soon"}
-            className={cn(
-              "flex items-center gap-2.5 rounded-lg border px-3 py-2.5 text-left transition-all text-xs",
-              i.status === "available"
-                ? "border-border bg-foreground/[0.02] hover:bg-foreground/[0.06] hover:border-border text-foreground"
-                : "border-border bg-transparent text-muted-foreground cursor-not-allowed"
-            )}
-          >
-            <span className="h-6 w-6 rounded-md bg-foreground/[0.06] flex items-center justify-center text-[9px] font-bold text-muted-foreground shrink-0">
-              {i.logo}
-            </span>
-            <div className="min-w-0">
-              <p className={cn("font-medium truncate", i.status === "coming_soon" && "text-muted-foreground")}>
-                {i.name}
-              </p>
-              <p className="text-[10px] text-muted-foreground truncate">
-                {i.status === "coming_soon" ? "Coming soon" : i.desc}
-              </p>
-            </div>
-          </button>
-        ))}
+        {OTHER_INTEGRATIONS.map((i) => {
+          const isRequested = requested.includes(i.name);
+          const isComingSoon = i.status === "coming_soon";
+          return (
+            <button
+              key={i.name}
+              disabled={isComingSoon || isRequested}
+              onClick={() => requestSetup(i.name)}
+              className={cn(
+                "flex items-center gap-2.5 rounded-lg border px-3 py-2.5 text-left transition-all text-xs",
+                isRequested
+                  ? "border-emerald-500/30 bg-emerald-500/[0.06] text-foreground"
+                  : !isComingSoon
+                  ? "border-border bg-foreground/[0.02] hover:bg-foreground/[0.06] hover:border-border text-foreground"
+                  : "border-border bg-transparent text-muted-foreground cursor-not-allowed"
+              )}
+            >
+              <span className={cn(
+                "h-6 w-6 rounded-md flex items-center justify-center text-[9px] font-bold shrink-0",
+                isRequested ? "bg-emerald-500/15 text-emerald-400" : "bg-foreground/[0.06] text-muted-foreground"
+              )}>
+                {isRequested ? <CheckCircle2 className="h-3.5 w-3.5" /> : i.logo}
+              </span>
+              <div className="min-w-0">
+                <p className={cn("font-medium truncate", isComingSoon && "text-muted-foreground")}>
+                  {i.name}
+                </p>
+                <p className="text-[10px] text-muted-foreground truncate">
+                  {isRequested ? "Setup requested" : isComingSoon ? "Coming soon" : i.desc}
+                </p>
+              </div>
+            </button>
+          );
+        })}
       </div>
     </div>
   );

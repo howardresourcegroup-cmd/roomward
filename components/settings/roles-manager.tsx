@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { Shield, Plus, Trash2, Check, Lock, Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { toast } from "@/components/ui/toast";
 import { Input } from "@/components/ui/input";
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter,
@@ -183,7 +184,7 @@ function CreateRoleDialog({ open, onClose, onCreated }: { open: boolean; onClose
       onCreated(r);
       onClose();
       setName(""); setDescription("");
-    } catch { /* ignore */ }
+    } catch { toast.error("Couldn't create the role. Please try again."); }
     setSaving(false);
   };
 

@@ -224,7 +224,13 @@ export default function LandingPage() {
             <LogoMark className="h-4 w-4 rounded" />
             <span>© 2026 Roomward · by Howard Resource Group</span>
           </div>
-          <div className="flex items-center gap-4">
+          <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-2">
+            <Link href="/hotel-work-order-software" className="hover:text-zinc-400 transition-colors">Work order software</Link>
+            <Link href="/hotel-preventive-maintenance-software" className="hover:text-zinc-400 transition-colors">Preventive maintenance</Link>
+            <Link href="/hotel-housekeeping-software" className="hover:text-zinc-400 transition-colors">Housekeeping software</Link>
+            <Link href="/hotel-operations-software" className="hover:text-zinc-400 transition-colors">Operations software</Link>
+            <Link href="/hotel-cmms-software" className="hover:text-zinc-400 transition-colors">Hotel CMMS</Link>
+            <Link href="/roommaster-integration" className="hover:text-zinc-400 transition-colors">RoomMaster integration</Link>
             <Link href="/blog" className="hover:text-zinc-400 transition-colors">Blog</Link>
             <Link href="/login" className="hover:text-zinc-400 transition-colors">Log in</Link>
             <Link href="/signup" className="hover:text-zinc-400 transition-colors">Start free trial</Link>

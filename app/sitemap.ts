@@ -10,6 +10,12 @@ export default function sitemap(): MetadataRoute.Sitemap {
   return [
     { url: `${base}/`,         lastModified: now, changeFrequency: "weekly",  priority: 1 },
     { url: `${base}/landing`,  lastModified: now, changeFrequency: "weekly",  priority: 0.9 },
+    { url: `${base}/hotel-work-order-software`,             lastModified: now, changeFrequency: "monthly", priority: 0.8 },
+    { url: `${base}/hotel-preventive-maintenance-software`, lastModified: now, changeFrequency: "monthly", priority: 0.8 },
+    { url: `${base}/hotel-housekeeping-software`,           lastModified: now, changeFrequency: "monthly", priority: 0.8 },
+    { url: `${base}/hotel-operations-software`,             lastModified: now, changeFrequency: "monthly", priority: 0.8 },
+    { url: `${base}/hotel-cmms-software`,                   lastModified: now, changeFrequency: "monthly", priority: 0.8 },
+    { url: `${base}/roommaster-integration`,                lastModified: now, changeFrequency: "monthly", priority: 0.8 },
     { url: `${base}/blog`,     lastModified: now, changeFrequency: "weekly",  priority: 0.8 },
     { url: `${base}/signup`,   lastModified: now, changeFrequency: "monthly", priority: 0.8 },
     { url: `${base}/login`,    lastModified: now, changeFrequency: "monthly", priority: 0.5 },

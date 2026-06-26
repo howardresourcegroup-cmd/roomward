@@ -6,6 +6,8 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { ChevronRight, Plus, Building2, PenLine } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { toast } from "@/components/ui/toast";
+import { PromptDialog } from "@/components/ui/confirm-dialog";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import dynamic from "next/dynamic";
 import { FloorGrid } from "@/components/floorplan/floor-grid";
@@ -26,16 +28,23 @@ export default function BuildingDetailPage({ params }: { params: Promise<{ id: s
   const [activeFloorId, setActiveFloorId] = useState("");
   const [editMode, setEditMode] = useState(false);
   const [addingFloor, setAddingFloor] = useState(false);
+  const [floorPromptOpen, setFloorPromptOpen] = useState(false);
+  const [focusSpace, setFocusSpace] = useState<{ id: string; n: number } | undefined>();
 
-  const handleAddFloor = async () => {
-    const name = prompt("Floor name?", `Floor ${floors.length + 1}`);
-    if (!name?.trim()) return;
+  // Clicking a room in the building overview jumps to its floor and opens it.
+  const handleSelectSpace = (space: import("@/types").Space) => {
+    setActiveFloorId(space.floor_id);
+    setFocusSpace({ id: space.id, n: Date.now() });
+  };
+
+  const handleAddFloor = async (name: string) => {
     setAddingFloor(true);
     try {
       const floor = await createFloor({ building_id: id, name: name.trim(), level: floors.length + 1 });
       addFloor(floor);
       setActiveFloorId(floor.id);
-    } catch { /* ignore */ }
+      setFloorPromptOpen(false);
+    } catch { toast.error("Couldn't add the floor. Please try again."); }
     setAddingFloor(false);
   };
 
@@ -76,7 +85,7 @@ export default function BuildingDetailPage({ params }: { params: Promise<{ id: s
           </div>
         </div>
         {can("buildings.edit") && (
-          <Button size="sm" variant="secondary" onClick={handleAddFloor} disabled={addingFloor}>
+          <Button size="sm" variant="secondary" onClick={() => setFloorPromptOpen(true)} disabled={addingFloor}>
             <Plus className="h-4 w-4" />
             {addingFloor ? "Adding…" : "Add Floor"}
           </Button>
@@ -88,7 +97,7 @@ export default function BuildingDetailPage({ params }: { params: Promise<{ id: s
           icon={Layers}
           title="No floors configured"
           description="Add floors to start mapping spaces."
-          action={can("buildings.edit") ? { label: "Add Floor", onClick: handleAddFloor } : undefined}
+          action={can("buildings.edit") ? { label: "Add Floor", onClick: () => setFloorPromptOpen(true) } : undefined}
         />
       ) : (
         <div className="grid grid-cols-1 xl:grid-cols-[280px_1fr] gap-6 items-start">
@@ -98,6 +107,7 @@ export default function BuildingDetailPage({ params }: { params: Promise<{ id: s
             spaces={spaces.filter((s) => floors.some((f) => f.id === s.floor_id))}
             activeFloorId={activeFloorId}
             onSelectFloor={setActiveFloorId}
+            onSelectSpace={handleSelectSpace}
           />
 
           {/* Detailed floor plan */}
@@ -147,6 +157,7 @@ export default function BuildingDetailPage({ params }: { params: Promise<{ id: s
                     floor={f}
                     spaces={spaces.filter((s) => s.floor_id === f.id)}
                     onStatusChange={handleStatusChange}
+                    focus={focusSpace}
                     onCreateWorkOrder={(spaceId) => {
                       router.push(`/work-orders/new?space=${spaceId}`);
                     }}
@@ -157,6 +168,18 @@ export default function BuildingDetailPage({ params }: { params: Promise<{ id: s
           </Tabs>
         </div>
       )}
+
+      <PromptDialog
+        open={floorPromptOpen}
+        onOpenChange={setFloorPromptOpen}
+        title="Add a floor"
+        label="Floor name"
+        placeholder={`Floor ${floors.length + 1}`}
+        defaultValue={`Floor ${floors.length + 1}`}
+        confirmLabel="Add Floor"
+        loading={addingFloor}
+        onConfirm={handleAddFloor}
+      />
     </div>
   );
 }

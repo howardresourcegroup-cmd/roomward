@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { createClient } from "@/lib/supabase/client";
+import { toast } from "@/components/ui/toast";
 import * as q from "./queries";
 import { fetchRoles, fetchMyPermissions } from "./roles";
 import type {
@@ -70,8 +71,16 @@ export function useBuildingDetail(buildingId: string) {
   }, [buildingId]);
 
   const setSpaceStatus = useCallback(async (spaceId: string, status: SpaceStatus) => {
-    setSpaces((prev) => prev.map((s) => (s.id === spaceId ? { ...s, status } : s))); // optimistic
-    try { await q.updateSpaceStatus(spaceId, status); } catch { /* realtime will reconcile */ }
+    let prev: SpaceStatus | undefined;
+    setSpaces((cur) => cur.map((s) => {
+      if (s.id === spaceId) { prev = s.status; return { ...s, status }; } // optimistic
+      return s;
+    }));
+    try { await q.updateSpaceStatus(spaceId, status); }
+    catch {
+      setSpaces((cur) => cur.map((s) => (s.id === spaceId && prev ? { ...s, status: prev } : s))); // revert
+      toast.error("Couldn't update the space status. Please try again.");
+    }
   }, []);
 
   const addSpace = useCallback((space: Space) => setSpaces((prev) => [...prev, space]), []);
@@ -104,8 +113,13 @@ export function useWorkOrder(id: string) {
   }, [id]);
 
   const setStatus = useCallback(async (status: WorkOrderStatus) => {
-    setOrder((prev) => prev ? { ...prev, status } : prev); // optimistic
-    await q.updateWorkOrderStatus(id, status);
+    let prev: WorkOrderStatus | undefined;
+    setOrder((o) => { if (o) { prev = o.status; return { ...o, status }; } return o; }); // optimistic
+    try { await q.updateWorkOrderStatus(id, status); }
+    catch {
+      setOrder((o) => (o && prev ? { ...o, status: prev } : o)); // revert
+      toast.error("Couldn't update the work order status. Please try again.");
+    }
   }, [id]);
 
   return { order, loading, setStatus };
@@ -147,8 +161,16 @@ export function useHousekeeping() {
   }, []);
 
   const setStatus = useCallback(async (spaceId: string, status: HousekeepingStatus) => {
-    setRooms((prev) => prev.map((s) => (s.id === spaceId ? { ...s, housekeeping_status: status } : s))); // optimistic
-    try { await q.updateHousekeepingStatus(spaceId, status); } catch { /* realtime reconciles */ }
+    let prev: HousekeepingStatus | undefined;
+    setRooms((cur) => cur.map((s) => {
+      if (s.id === spaceId) { prev = s.housekeeping_status; return { ...s, housekeeping_status: status }; } // optimistic
+      return s;
+    }));
+    try { await q.updateHousekeepingStatus(spaceId, status); }
+    catch {
+      setRooms((cur) => cur.map((s) => (s.id === spaceId && prev ? { ...s, housekeeping_status: prev } : s))); // revert
+      toast.error("Couldn't update the room status. Please try again.");
+    }
   }, []);
 
   return { rooms, loading, setStatus };

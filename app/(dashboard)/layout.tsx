@@ -4,14 +4,13 @@ import { OnboardingGuard } from "@/components/onboarding-guard";
 import { BuildingSetupGuard } from "@/components/buildings/building-setup-guard";
 import { WelcomeModal } from "@/components/welcome-modal";
 import { TrialBanner } from "@/components/billing/trial-banner";
-import { DemoCleanup } from "@/components/demo-cleanup";
 import { ProductTour } from "@/components/product-tour";
+import { Toaster } from "@/components/ui/toast";
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   return (
     <OnboardingGuard>
       <WelcomeModal />
-      <DemoCleanup />
       <ProductTour />
       <div className="flex h-screen overflow-hidden bg-background">
         {/* Desktop sidebar — hidden on mobile */}
@@ -29,6 +28,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           </main>
         </div>
       </div>
+      <Toaster />
     </OnboardingGuard>
   );
 }

@@ -4,6 +4,8 @@ import { useState } from "react";
 import { motion } from "framer-motion";
 import { Package, Plus, Wrench, AlertTriangle, CheckCircle2, Calendar, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { toast } from "@/components/ui/toast";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import {
@@ -30,6 +32,8 @@ export default function AssetsPage() {
   const { assets, loading, reload } = useAssets();
   const { can } = usePermissions();
   const [showCreate, setShowCreate] = useState(false);
+  const [pendingDelete, setPendingDelete] = useState<Asset | null>(null);
+  const [deleting, setDeleting] = useState(false);
 
   const counts = {
     total:       assets.length,
@@ -38,10 +42,12 @@ export default function AssetsPage() {
     overdue:     assets.filter((a) => a.next_maintenance_at && new Date(a.next_maintenance_at) < new Date()).length,
   };
 
-  const remove = async (id: string) => {
-    if (!confirm("Remove this asset?")) return;
-    await deleteAsset(id);
-    reload();
+  const confirmRemove = async () => {
+    if (!pendingDelete) return;
+    setDeleting(true);
+    try { await deleteAsset(pendingDelete.id); reload(); setPendingDelete(null); }
+    catch { toast.error("Couldn't remove the asset. Please try again."); }
+    setDeleting(false);
   };
 
   return (
@@ -134,7 +140,7 @@ export default function AssetsPage() {
                       </td>
                       <td className="px-4 py-3">
                         {can("assets.manage") && (
-                          <button onClick={() => remove(asset.id)} className="opacity-0 group-hover:opacity-100 text-muted-foreground hover:text-red-400 transition-all">
+                          <button onClick={() => setPendingDelete(asset)} className="opacity-0 group-hover:opacity-100 text-muted-foreground hover:text-red-400 transition-all">
                             <Trash2 className="h-3.5 w-3.5" />
                           </button>
                         )}
@@ -149,6 +155,17 @@ export default function AssetsPage() {
       )}
 
       <CreateAssetModal open={showCreate} onClose={() => setShowCreate(false)} onCreated={reload} />
+
+      <ConfirmDialog
+        open={!!pendingDelete}
+        onOpenChange={(o) => !o && setPendingDelete(null)}
+        title={`Remove ${pendingDelete?.name ?? "asset"}?`}
+        description="This removes the asset and its maintenance history. This cannot be undone."
+        confirmLabel="Remove asset"
+        destructive
+        loading={deleting}
+        onConfirm={confirmRemove}
+      />
     </div>
   );
 }
@@ -170,7 +187,7 @@ function CreateAssetModal({ open, onClose, onCreated }: { open: boolean; onClose
       });
       onCreated(); onClose();
       setForm({ name: "", type: "HVAC", model: "", serial_number: "", status: "operational", next: "" });
-    } catch { /* ignore */ }
+    } catch { toast.error("Couldn't add the asset. Please try again."); }
     setSaving(false);
   };
 

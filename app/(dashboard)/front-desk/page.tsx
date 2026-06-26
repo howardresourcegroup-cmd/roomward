@@ -7,6 +7,7 @@ import { createWorkOrder } from "@/lib/data/queries";
 import { createClient } from "@/lib/supabase/client";
 import { PageLoader } from "@/components/shared/loading-spinner";
 import { Button } from "@/components/ui/button";
+import { toast } from "@/components/ui/toast";
 import { cn } from "@/lib/utils";
 import type { HousekeepingStatus, WorkOrderPriority } from "@/types";
 
@@ -73,7 +74,7 @@ export default function FrontDeskPage() {
       setTitle(""); setDescription(""); setPriority("medium"); setCategory("General"); setSpaceId("");
       setSubmitted(true);
       setTimeout(() => setSubmitted(false), 4000);
-    } catch { /* ignore */ }
+    } catch { toast.error("Couldn't submit the request. Please try again."); }
     setSubmitting(false);
   };
 

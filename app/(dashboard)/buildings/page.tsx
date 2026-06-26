@@ -22,6 +22,7 @@ export default function BuildingsPage() {
   const stats = {
     total: buildings.length,
     withIssues: buildings.filter((b) => (b._issue_count ?? 0) > 0).length,
+    withEmergency: buildings.filter((b) => (b._emergency_count ?? 0) > 0).length,
     totalSpaces: buildings.reduce((a, b) => a + (b._space_count ?? 0), 0),
   };
 
@@ -33,7 +34,9 @@ export default function BuildingsPage() {
           <h1 className="text-2xl font-bold text-foreground">Buildings</h1>
           <p className="text-sm text-muted-foreground mt-1">
             {stats.total} facilities · {stats.totalSpaces} spaces tracked ·{" "}
-            {stats.withIssues > 0 ? (
+            {stats.withEmergency > 0 ? (
+              <span className="text-red-400">{stats.withEmergency} with active emergenc{stats.withEmergency !== 1 ? "ies" : "y"}</span>
+            ) : stats.withIssues > 0 ? (
               <span className="text-amber-400">{stats.withIssues} with active issues</span>
             ) : (
               <span className="text-emerald-400">All healthy</span>
