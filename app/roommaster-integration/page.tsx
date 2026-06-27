@@ -52,6 +52,12 @@ export default function Page() {
         { q: "Is the sync real time?", a: "You can run a full sync on demand, and single-room changes can also arrive instantly via webhook, so a status change in RoomMaster shows up in Roomward right away." },
         { q: "How much does it cost?", a: "The RoomMaster integration is included. Standard is $149/month per property for up to 25 team members; Pro is $249/month for unlimited team members. Every plan starts with a free 14-day trial, no credit card required." },
       ]}
+      related={[
+        { href: "/hotel-housekeeping-software", label: "Hotel housekeeping software" },
+        { href: "/hotel-work-order-software", label: "Hotel work order software" },
+        { href: "/hotel-operations-software", label: "Hotel operations software" },
+        { href: "/eptura-integration", label: "Eptura integration" },
+      ]}
     />
   );
 }

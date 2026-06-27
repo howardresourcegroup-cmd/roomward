@@ -52,6 +52,12 @@ export default function Page() {
         { q: "Does it work on a phone?", a: "Yes. Roomward runs in any mobile browser, so staff update room status right where they're standing — no app install, no shared clipboard." },
         { q: "How much does it cost?", a: "Standard is $149/month per property for up to 25 team members; Pro is $249/month for unlimited team members. Every plan starts with a free 14-day trial, no credit card required." },
       ]}
+      related={[
+        { href: "/hotel-operations-software", label: "Hotel operations software" },
+        { href: "/hotel-work-order-software", label: "Hotel work order software" },
+        { href: "/roommaster-integration", label: "RoomMaster integration" },
+        { href: "/blog/hotel-housekeeping-checklist", label: "Guide: Hotel housekeeping checklist" },
+      ]}
     />
   );
 }

@@ -52,6 +52,12 @@ export default function Page() {
         { q: "How do we get connected?", a: "Start a free trial and request the Cloudbeds connection — our team sets it up for you, so you can get going without a big IT project." },
         { q: "How much does it cost?", a: "Standard is $149/month per property for up to 25 team members; Pro is $249/month for unlimited team members. Every plan starts with a free 14-day trial, no credit card required." },
       ]}
+      related={[
+        { href: "/hotel-operations-software", label: "Hotel operations software" },
+        { href: "/hotel-housekeeping-software", label: "Hotel housekeeping software" },
+        { href: "/hotel-work-order-software", label: "Hotel work order software" },
+        { href: "/opera-pms-integration", label: "Opera PMS integration" },
+      ]}
     />
   );
 }

@@ -52,6 +52,12 @@ export default function Page() {
         { q: "Can it track our equipment?", a: "Yes. The asset registry tracks make, model, serial number, location, condition, and maintenance history for every piece of equipment, each tied to the room or area it lives in." },
         { q: "How much does it cost?", a: "Standard is $149/month per property for up to 25 team members; Pro is $249/month for unlimited team members. Every plan starts with a free 14-day trial, no credit card required." },
       ]}
+      related={[
+        { href: "/hotel-work-order-software", label: "Hotel work order software" },
+        { href: "/hotel-preventive-maintenance-software", label: "Hotel preventive maintenance software" },
+        { href: "/hotel-operations-software", label: "Hotel operations software" },
+        { href: "/blog/what-is-a-cmms-hotel-guide", label: "Guide: What is a CMMS? A hotel operator's guide" },
+      ]}
     />
   );
 }

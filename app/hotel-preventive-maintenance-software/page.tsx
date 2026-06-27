@@ -52,6 +52,12 @@ export default function Page() {
         { q: "Does it integrate with our PMS?", a: "Roomward syncs two-way with RoomMaster and Eptura, adding a live operations and maintenance layer on top of the systems you already use." },
         { q: "How much does it cost?", a: "Standard is $149/month per property for up to 25 team members; Pro is $249/month for unlimited team members. Every plan starts with a free 14-day trial, no credit card required." },
       ]}
+      related={[
+        { href: "/hotel-cmms-software", label: "Hotel CMMS software" },
+        { href: "/hotel-work-order-software", label: "Hotel work order software" },
+        { href: "/hotel-operations-software", label: "Hotel operations software" },
+        { href: "/blog/preventive-maintenance-for-hotels", label: "Guide: Preventive maintenance for hotels" },
+      ]}
     />
   );
 }

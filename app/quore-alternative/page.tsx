@@ -52,6 +52,12 @@ export default function Page() {
         { q: "Can we try it before switching?", a: "Yes. Start a free 14-day trial, or open the live demo with no signup at all to click through real screens before you decide." },
         { q: "Does Roomward work with our PMS?", a: "Roomward syncs two-way with RoomMaster and Eptura, and connects to other systems like Opera and Cloudbeds. It's an operations layer on top of your PMS, not a replacement for it." },
       ]}
+      related={[
+        { href: "/hotel-operations-software", label: "Hotel operations software" },
+        { href: "/hotel-cmms-software", label: "Hotel CMMS software" },
+        { href: "/hotel-housekeeping-software", label: "Hotel housekeeping software" },
+        { href: "/blog/best-hotel-maintenance-software-2026", label: "Guide: The best hotel maintenance software in 2026" },
+      ]}
     />
   );
 }

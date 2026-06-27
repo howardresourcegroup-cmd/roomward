@@ -19,10 +19,13 @@ export interface SeoLandingProps {
   benefits: string[];
   faqs: { q: string; a: string }[];
   canonicalPath: string;  // e.g. "/hotel-work-order-software"
+  /** Internal cross-links to sibling landing pages + relevant blog posts.
+   *  Use descriptive, keyword-bearing anchor text — not "click here". */
+  related?: { href: string; label: string }[];
 }
 
 export function SeoLanding({
-  keyword, eyebrow, h1, intro, heroImg, heroAlt, features, benefits, faqs, canonicalPath,
+  keyword, eyebrow, h1, intro, heroImg, heroAlt, features, benefits, faqs, canonicalPath, related,
 }: SeoLandingProps) {
   const softwareSchema = {
     "@context": "https://schema.org",
@@ -136,6 +139,26 @@ export function SeoLanding({
           ))}
         </div>
       </section>
+
+      {/* Related — internal links for topical authority + crawl depth */}
+      {related && related.length > 0 && (
+        <section className="relative z-10 max-w-3xl mx-auto px-6 pb-20">
+          <h2 className="text-2xl font-bold text-center mb-8">Explore more</h2>
+          <ul className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            {related.map((r) => (
+              <li key={r.href}>
+                <Link
+                  href={r.href}
+                  className="glass-card flex items-center justify-between gap-2 p-4 text-sm font-medium text-zinc-200 hover:text-white transition-colors"
+                >
+                  {r.label}
+                  <ArrowRight className="h-4 w-4 text-zinc-500 shrink-0" />
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
 
       {/* CTA */}
       <section className="relative z-10 max-w-3xl mx-auto px-6 pb-24 text-center">

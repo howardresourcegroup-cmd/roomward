@@ -52,6 +52,12 @@ export default function Page() {
         { q: "How are statuses mapped?", a: "Eptura statuses map to Roomward's: New → open, Assigned → assigned, In Progress → in progress, On Hold/Waiting → waiting on parts, Completed/Closed → completed, Cancelled → cancelled. Priorities map similarly, with Urgent and Critical becoming critical." },
         { q: "How much does it cost?", a: "The Eptura integration is included. Standard is $149/month per property for up to 25 team members; Pro is $249/month for unlimited team members. Every plan starts with a free 14-day trial, no credit card required." },
       ]}
+      related={[
+        { href: "/hotel-cmms-software", label: "Hotel CMMS software" },
+        { href: "/hotel-work-order-software", label: "Hotel work order software" },
+        { href: "/hotel-operations-software", label: "Hotel operations software" },
+        { href: "/roommaster-integration", label: "RoomMaster integration" },
+      ]}
     />
   );
 }

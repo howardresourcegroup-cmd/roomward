@@ -52,6 +52,12 @@ export default function Page() {
         { q: "Can we see the whole property at once?", a: "Yes. The interactive property map shows every building, floor, and room with live status, and you can drill into any room to see its assets and open work orders." },
         { q: "How much does it cost?", a: "Standard is $149/month per property for up to 25 team members; Pro is $249/month for unlimited team members. Every plan starts with a free 14-day trial, no credit card required." },
       ]}
+      related={[
+        { href: "/hotel-cmms-software", label: "Hotel CMMS software" },
+        { href: "/hotel-work-order-software", label: "Hotel work order software" },
+        { href: "/hotel-housekeeping-software", label: "Hotel housekeeping software" },
+        { href: "/blog/what-is-hotel-operations-management", label: "Guide: What is hotel operations management?" },
+      ]}
     />
   );
 }

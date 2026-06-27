@@ -27,9 +27,9 @@ For hotels specifically, a CMMS does something a spreadsheet never can: it ties 
 
 At its core, a good CMMS handles four things:
 
-- **Work orders** — log an issue, assign it to a tech, track it from open to done, with photos and notes.
+- **[Work orders](/hotel-work-order-software)** — log an issue, assign it to a tech, track it from open to done, with photos and notes.
 - **Assets** — keep a record of your HVAC units, water heaters, elevators, and appliances, including service history.
-- **Preventive maintenance** — schedule recurring upkeep so small problems get caught before they become guest complaints.
+- **[Preventive maintenance](/hotel-preventive-maintenance-software)** — schedule recurring upkeep so small problems get caught before they become guest complaints.
 - **Reporting** — see how long repairs take, which rooms generate the most issues, and where your time goes.
 
 ## Why hotels need one more than most
@@ -49,7 +49,7 @@ If two or more of those sound familiar, you've outgrown manual tracking.
 
 ## How Roomward fits
 
-[Roomward](/) is a CMMS built for hospitality. It connects the people who *see* problems with the people who *solve* them — housekeeping, front desk, and maintenance all work from the same live view of the property. Rooms appear on a real floor plan, work orders carry photos and history, and a live housekeeping board shows the front desk exactly which rooms are ready.
+[Roomward](/) is a CMMS built for hospitality. It connects the people who *see* problems with the people who *solve* them — housekeeping, front desk, and maintenance all work from the same live view of the property. Rooms appear on a real floor plan, work orders carry photos and history, and a [live housekeeping board](/hotel-housekeeping-software) shows the front desk exactly which rooms are ready.
 
 You can [start a free 14-day trial](/signup) — no credit card — and have your first building set up in a few minutes.`,
   },
@@ -60,7 +60,7 @@ You can [start a free 14-day trial](/signup) — no credit card — and have you
     date: "2026-06-09",
     readMins: 7,
     keyword: "preventive maintenance plan",
-    content: `Reactive maintenance — fixing things only after they break — is the most expensive way to run a property. A guest finds the problem, you comp the room, and the repair costs more because it failed at the worst possible time. **Preventive maintenance** flips that: you service equipment on a schedule so it fails far less often, and almost never in front of a guest.
+    content: `Reactive maintenance — fixing things only after they break — is the most expensive way to run a property. A guest finds the problem, you comp the room, and the repair costs more because it failed at the worst possible time. **[Preventive maintenance](/hotel-preventive-maintenance-software)** flips that: you service equipment on a schedule so it fails far less often, and almost never in front of a guest.
 
 Here's how to build a plan that actually sticks.
 
@@ -81,7 +81,7 @@ Start with manufacturer recommendations, then adjust based on what actually fail
 
 ## Step 3: Assign and schedule
 
-A plan nobody owns is a plan that slips. Each recurring task needs an owner and a due date that shows up *before* it's overdue — not a note in someone's head. This is exactly where software beats a binder: recurring work orders generate themselves and land on the right person's list.
+A plan nobody owns is a plan that slips. Each recurring task needs an owner and a due date that shows up *before* it's overdue — not a note in someone's head. This is exactly where software beats a binder: recurring [work orders](/hotel-work-order-software) generate themselves and land on the right person's list.
 
 ## Step 4: Close the loop with the people who see problems
 
@@ -114,9 +114,9 @@ A hotel is a building guests live inside of. When something breaks, the clock is
 
 Good software handles four jobs:
 
-- **Work orders** — log an issue, assign it, track it from open to done, with photos and a full history.
-- **Preventive maintenance** — recurring tasks that generate themselves so upkeep happens *before* something fails.
-- **Asset tracking** — a record of every HVAC unit, water heater, and elevator, with service history attached.
+- **[Work orders](/hotel-work-order-software)** — log an issue, assign it, track it from open to done, with photos and a full history.
+- **[Preventive maintenance](/hotel-preventive-maintenance-software)** — recurring tasks that generate themselves so upkeep happens *before* something fails.
+- **[Asset tracking](/hotel-cmms-software)** — a record of every HVAC unit, water heater, and elevator, with service history attached.
 - **Visibility** — a live view the whole team shares, so "what's the status of Room 214?" has an answer without three phone calls.
 
 ## The features that actually matter
@@ -197,9 +197,9 @@ Some things don't need daily attention but can't be ignored:
 
 Here's the gap that costs hotels the most: a room can be spotless and the front desk still doesn't know it. So they either hold a guest at the desk waiting, or — worse — assign a room that isn't actually ready.
 
-The fix is a live housekeeping board. When a housekeeper marks a room *clean and ready*, the front desk sees it change color in real time. No phone call, no radio, no walking down to check. The room moves from dirty to cleaning to ready, and everyone who needs to know, knows the moment it happens.
+The fix is a [live housekeeping board](/hotel-housekeeping-software). When a housekeeper marks a room *clean and ready*, the front desk sees it change color in real time. No phone call, no radio, no walking down to check. The room moves from dirty to cleaning to ready, and everyone who needs to know, knows the moment it happens.
 
-This also catches maintenance problems early. When a housekeeper spots a slow drain during a clean, flagging it should be one tap — and it should become a work order maintenance can see immediately, not a note that gets forgotten by the end of the shift.
+This also catches maintenance problems early. When a housekeeper spots a slow drain during a clean, flagging it should be one tap — and it should become a [work order](/hotel-work-order-software) maintenance can see immediately, not a note that gets forgotten by the end of the shift.
 
 ## Making the checklist live with Roomward
 
@@ -256,7 +256,7 @@ A few principles make work orders stick:
 
 ## Why software beats a binder here
 
-You can run this system on paper, and small properties do. But paper can't notify the right person, can't be in two places at once, and can't show the front desk a live status. Once you're past a handful of rooms, [hotel work order software](/) pays for itself the first time it prevents a single re-sold down room.
+You can run this system on paper, and small properties do. But paper can't notify the right person, can't be in two places at once, and can't show the front desk a live status. Once you're past a handful of rooms, [hotel work order software](/hotel-work-order-software) pays for itself the first time it prevents a single re-sold down room.
 
 ## How Roomward handles it
 
@@ -279,14 +279,14 @@ The two are often confused, so let's draw the line clearly.
 
 A **property management system** (PMS) — like Opera, Cloudbeds, or RoomMaster — handles reservations, check-in and check-out, rates, and billing. It's the system of record for the guest's stay.
 
-A **hotel operations management system** handles everything that keeps the rooms *sellable*: work orders, preventive maintenance, the housekeeping board, asset tracking, and team coordination. It's the system of record for the work.
+A **[hotel operations management system](/hotel-operations-software)** handles everything that keeps the rooms *sellable*: work orders, preventive maintenance, the housekeeping board, asset tracking, and team coordination. It's the system of record for the work.
 
 You need both. The PMS sells the room; the operations system makes sure the room is ready, clean, and not broken when it's sold. The best setups have the two *talking to each other* — when housekeeping marks a room ready in operations, the PMS knows it can be assigned.
 
 ## What an operations system actually coordinates
 
-- **Maintenance** — every issue from report to repair, tied to a specific room or asset.
-- **Housekeeping** — a live board showing which rooms are dirty, being cleaned, or ready to sell.
+- **[Maintenance](/hotel-work-order-software)** — every issue from report to repair, tied to a specific room or asset.
+- **[Housekeeping](/hotel-housekeeping-software)** — a live board showing which rooms are dirty, being cleaned, or ready to sell.
 - **Preventive upkeep** — recurring tasks so equipment is serviced before it fails.
 - **Team coordination** — the hand-offs between the person who *sees* a problem and the person who *fixes* it.
 - **Visibility** — a shared, real-time view so no one has to make phone calls to find out a room's status.
@@ -363,7 +363,7 @@ Every GM has seen a beautiful checklist die in a binder. The failure mode isn't 
 
 That's the case for tracking this in [hotel maintenance software](/blog/best-hotel-maintenance-software-2026) instead of paper: recurring tasks assign themselves, every check leaves a record, and a failed item becomes a work order on the spot instead of a note that may or may not survive the shift.
 
-[Roomward](/) handles exactly that — recurring maintenance tasks, work orders tied to specific rooms on a live floor plan, and a history for every space and asset. [Start a free 14-day trial](/signup) and put the checklist somewhere it can't be lost.`,
+[Roomward](/) handles exactly that — [recurring maintenance tasks](/hotel-preventive-maintenance-software), [work orders](/hotel-work-order-software) tied to specific rooms on a live floor plan, and a history for every space and asset. [Start a free 14-day trial](/signup) and put the checklist somewhere it can't be lost.`,
   },
   {
     slug: "hotel-asset-management-guide",
@@ -413,7 +413,7 @@ In a hotel, the question is never just "is the HVAC fine?" It's "is the HVAC *se
 
 List your big equipment, give each a status and a next-service date, and route every repair through a work order attached to the asset. That's it — the histories build themselves from there.
 
-[Roomward](/) includes asset tracking tied to your live floor plan: every asset has a location, a status, a service schedule, and its complete work-order history. [Start a free 14-day trial](/signup) and get your equipment out of the binder.`,
+[Roomward](/) includes [asset tracking](/hotel-cmms-software) tied to your live floor plan: every asset has a location, a status, a [service schedule](/hotel-preventive-maintenance-software), and its complete work-order history. [Start a free 14-day trial](/signup) and get your equipment out of the binder.`,
   },
   {
     slug: "reduce-hotel-maintenance-costs",
@@ -430,7 +430,7 @@ Your cleaning crew enters every room every day. If reporting an issue takes them
 
 ## 2. Schedule the cheap visit so you skip the expensive one
 
-A serviced HVAC unit and a seized one differ by an order of magnitude in cost. Preventive maintenance feels like spending because the unit "was fine" — but it's the discount price for the same work that's brutal at emergency rates. ([Here's a full preventive program](/blog/preventive-maintenance-for-hotels).)
+A serviced HVAC unit and a seized one differ by an order of magnitude in cost. [Preventive maintenance](/hotel-preventive-maintenance-software) feels like spending because the unit "was fine" — but it's the discount price for the same work that's brutal at emergency rates. ([Here's a full preventive program](/blog/preventive-maintenance-for-hotels).)
 
 ## 3. Stop diagnosing the same asset from scratch
 
@@ -456,7 +456,7 @@ You can't fix what you don't see. Average time-to-close, open orders by priority
 
 None of these cut corners — they cut friction: faster reporting, scheduled prevention, visible history, one source of truth. The work still happens; it just happens once, earlier, and cheaper.
 
-[Roomward](/) is built around exactly this loop — housekeeping reports in seconds, work orders live on a real floor plan, assets carry their histories, and reports show resolution time without spreadsheet work. [Start a free 14-day trial](/signup), no credit card required.`,
+[Roomward](/) is built around exactly this loop — housekeeping reports in seconds, [work orders](/hotel-work-order-software) live on a real floor plan, assets carry their histories, and reports show resolution time without spreadsheet work. [Start a free 14-day trial](/signup), no credit card required.`,
   },
 ];
 
