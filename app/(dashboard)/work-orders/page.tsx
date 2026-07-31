@@ -133,11 +133,14 @@ export default function WorkOrdersPage() {
             <button
               key={p}
               onClick={() => setPriorityFilter(priorityFilter === p ? "all" : p)}
+              aria-pressed={priorityFilter === p}
               className={cn(
-                "badge transition-colors cursor-pointer",
+                // Roomier than a plain badge — these are filters people tap on a
+                // phone, not labels.
+                "badge min-h-[34px] px-3 cursor-pointer transition-all active:scale-[0.97]",
                 priorityFilter === p
                   ? cn(cfg.bg, cfg.border, cfg.color)
-                  : "bg-foreground/[0.03] border-border text-muted-foreground hover:text-muted-foreground"
+                  : "bg-foreground/[0.03] border-border text-muted-foreground hover:text-foreground hover:bg-foreground/[0.06]"
               )}
             >
               {cfg.label}

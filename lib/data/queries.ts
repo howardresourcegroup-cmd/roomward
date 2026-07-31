@@ -7,16 +7,24 @@
 import { createClient } from "@/lib/supabase/client";
 import { computeDashboardStats } from "@/lib/data/stats";
 import { deriveSpaceStatusFromWorkOrder } from "@/lib/work-orders/status";
+import { isSupabaseConfigured } from "@/lib/demo-mode";
+import {
+  MOCK_HOUSEKEEPERS, MOCK_OCCUPANCY, MOCK_FNB_OUTLETS, MOCK_SPACES,
+  MOCK_FNB_INVENTORY, MOCK_FNB_TEMP_LOGS, MOCK_BANQUET_EVENTS,
+  MOCK_BUILDINGS, MOCK_WORK_ORDERS, MOCK_PROFILES, MOCK_STATS, MOCK_ACTIVITY,
+} from "@/lib/mock-data";
 import type {
   Building, Floor, Space, WorkOrder, Profile, Channel, Message, Asset,
   SpaceStatus, HousekeepingStatus, WorkOrderStatus, WorkOrderPriority, AssetStatus, DashboardStats,
-  AuditLog, Announcement,
+  AuditLog, Announcement, OccupancySnapshot, FnbOutlet, FnbInventoryItem, FnbTempLog,
+  BanquetEvent, DashboardLayout,
 } from "@/types";
 
 const sb = () => createClient();
 
 // ─── Buildings ────────────────────────────────────────────────────────────────
 export async function fetchBuildings(): Promise<Building[]> {
+  if (!isSupabaseConfigured()) return MOCK_BUILDINGS;
   const supabase = sb();
   // Run all three queries in parallel instead of waterfalling
   const [{ data: buildings, error }, { data: floors }, { data: spaces }] = await Promise.all([
@@ -50,9 +58,15 @@ export async function fetchOrganization() {
   const supabase = sb();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return null;
-  const { data: me } = await supabase.from("profiles").select("organization_id").eq("id", user.id).single();
+  // maybeSingle, not single: "this user has no org yet" is a real, expected state
+  // and must stay distinguishable from "the request failed" — which throws.
+  const { data: me, error: meErr } = await supabase
+    .from("profiles").select("organization_id").eq("id", user.id).maybeSingle();
+  if (meErr) throw meErr;
   if (!me?.organization_id) return null;
-  const { data } = await supabase.from("organizations").select("*").eq("id", me.organization_id).single();
+  const { data, error } = await supabase
+    .from("organizations").select("*").eq("id", me.organization_id).maybeSingle();
+  if (error) throw error;
   return data;
 }
 
@@ -168,7 +182,8 @@ export async function fetchSpacesForBuilding(buildingId: string): Promise<Space[
 }
 
 export async function fetchSpace(id: string): Promise<Space | null> {
-  const { data } = await sb().from("spaces").select("*").eq("id", id).single();
+  const { data, error } = await sb().from("spaces").select("*").eq("id", id).maybeSingle();
+  if (error) throw error;
   return (data as Space) ?? null;
 }
 
@@ -179,9 +194,12 @@ export async function updateSpaceStatus(spaceId: string, status: SpaceStatus): P
 
 // ─── Housekeeping ─────────────────────────────────────────────────────────────
 export async function fetchHousekeepingRooms(): Promise<Space[]> {
+  if (!isSupabaseConfigured()) {
+    return MOCK_SPACES.filter((s) => ["guest_room", "suite", "cabin"].includes(s.type));
+  }
   const { data, error } = await sb()
     .from("spaces")
-    .select("*, floor:floors(name, building:buildings(name))")
+    .select("*, floor:floors(name, building:buildings(name)), housekeeper:profiles!housekeeper_id(id, full_name, avatar_url)")
     .in("type", ["guest_room", "suite", "cabin"])
     .order("name");
   if (error) throw error;
@@ -266,6 +284,7 @@ const WORK_ORDER_SELECT = `
 `;
 
 export async function fetchWorkOrders(): Promise<WorkOrder[]> {
+  if (!isSupabaseConfigured()) return MOCK_WORK_ORDERS;
   const { data, error } = await sb()
     .from("work_orders").select(WORK_ORDER_SELECT).order("created_at", { ascending: false });
   if (error) throw error;
@@ -412,19 +431,25 @@ export async function deleteAsset(id: string): Promise<void> {
 
 // ─── Profiles (team) ──────────────────────────────────────────────────────────
 export async function fetchProfiles(): Promise<Profile[]> {
+  if (!isSupabaseConfigured()) return MOCK_PROFILES;
   const { data, error } = await sb().from("profiles").select("*").order("full_name");
   if (error) throw error;
   return (data ?? []) as Profile[];
 }
 
 export async function fetchCurrentProfile(): Promise<Profile | null> {
+  // Demo mode has no Supabase session; the signed cookie identifies the manager.
+  if (!isSupabaseConfigured()) return MOCK_PROFILES.find((p) => p.role === "manager") ?? null;
   const supabase = sb();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return null;
-  const { data } = await supabase
+  const { data, error } = await supabase
     .from("profiles")
     .select("*, role_def:roles(slug, name)")
-    .eq("id", user.id).single();
+    .eq("id", user.id).maybeSingle();
+  // A failed profile read must not look like "no profile" — that silently
+  // degrades the user to the Viewer fallback and hides their real permissions.
+  if (error) throw error;
   if (!data) return null;
   // Flatten the joined role slug (reliable, unlike the legacy text role)
   const roleDef = (data as { role_def?: { slug?: string } }).role_def;
@@ -463,6 +488,7 @@ export async function sendMessage(channelId: string, body: string): Promise<Mess
 
 // ─── Dashboard stats (computed) ───────────────────────────────────────────────
 export async function fetchDashboardStats(): Promise<DashboardStats> {
+  if (!isSupabaseConfigured()) return MOCK_STATS;
   const supabase = sb();
   const [{ data: spaces }, { data: workOrders }, { data: profiles }] = await Promise.all([
     supabase.from("spaces").select("status"),
@@ -474,6 +500,7 @@ export async function fetchDashboardStats(): Promise<DashboardStats> {
 }
 
 export async function fetchRecentActivity(): Promise<import("@/types").ActivityItem[]> {
+  if (!isSupabaseConfigured()) return MOCK_ACTIVITY;
   const supabase = sb();
   const since = new Date(Date.now() - 7 * 24 * 3600 * 1000).toISOString();
 
@@ -539,18 +566,22 @@ export async function fetchAuditLogs(limit = 60, filter?: string): Promise<Audit
     .order("created_at", { ascending: false })
     .limit(limit);
   if (filter) q = q.like("action", `${filter}.%`);
-  const { data } = await q;
+  const { data, error } = await q;
+  // Swallowing this would render "no activity yet" for a table that failed to
+  // load — the caller can only apologise properly if it knows the difference.
+  if (error) throw error;
   return (data ?? []) as AuditLog[];
 }
 
 // ─── Corporate — Announcements ────────────────────────────────────────────────
 export async function fetchAnnouncements(): Promise<Announcement[]> {
-  const { data } = await sb()
+  const { data, error } = await sb()
     .from("announcements")
     .select("*, author:profiles!author_id(full_name, avatar_url)")
     .order("pinned", { ascending: false })
     .order("created_at", { ascending: false })
     .limit(50);
+  if (error) throw error;
   return (data ?? []) as Announcement[];
 }
 
@@ -605,5 +636,221 @@ export async function createAnnouncement(input: {
 
 export async function deleteAnnouncement(id: string): Promise<void> {
   const { error } = await sb().from("announcements").delete().eq("id", id);
+  if (error) throw error;
+}
+
+// ─── Housekeeping assignment ─────────────────────────────────────────────────
+/** Staff who can be given a room board. Managers/admins are included — at a
+ *  small property they clean too, and excluding them just means the picker is
+ *  missing the person actually doing the work. */
+export async function fetchHousekeepers(): Promise<Profile[]> {
+  if (!isSupabaseConfigured()) return MOCK_HOUSEKEEPERS;
+  const { data, error } = await sb()
+    .from("profiles")
+    .select("*")
+    .in("role", ["housekeeping", "manager", "admin"])
+    .order("full_name");
+  if (error) throw error;
+  return (data ?? []) as Profile[];
+}
+
+export async function assignHousekeeper(spaceId: string, housekeeperId: string | null): Promise<void> {
+  if (!isSupabaseConfigured()) return;
+  const { error } = await sb()
+    .from("spaces")
+    .update({
+      housekeeper_id: housekeeperId,
+      housekeeping_assigned_at: housekeeperId ? new Date().toISOString() : null,
+    })
+    .eq("id", spaceId);
+  if (error) throw error;
+}
+
+/** Assign several rooms at once — the normal way a board gets built each morning. */
+export async function assignHousekeeperBulk(spaceIds: string[], housekeeperId: string | null): Promise<void> {
+  if (!isSupabaseConfigured() || spaceIds.length === 0) return;
+  const { error } = await sb()
+    .from("spaces")
+    .update({
+      housekeeper_id: housekeeperId,
+      housekeeping_assigned_at: housekeeperId ? new Date().toISOString() : null,
+    })
+    .in("id", spaceIds);
+  if (error) throw error;
+}
+
+// ─── Occupancy analytics ─────────────────────────────────────────────────────
+export async function fetchOccupancy(from: string, to: string): Promise<OccupancySnapshot[]> {
+  if (!isSupabaseConfigured()) {
+    return MOCK_OCCUPANCY.filter((s) => s.stay_date >= from && s.stay_date <= to);
+  }
+  const { data, error } = await sb()
+    .from("occupancy_snapshots")
+    .select("*")
+    .gte("stay_date", from)
+    .lte("stay_date", to)
+    .order("stay_date");
+  if (error) throw error;
+  return (data ?? []) as OccupancySnapshot[];
+}
+
+// ─── Food & Beverage ─────────────────────────────────────────────────────────
+export async function fetchFnbOutlets(): Promise<FnbOutlet[]> {
+  if (!isSupabaseConfigured()) return MOCK_FNB_OUTLETS;
+  const { data, error } = await sb().from("fnb_outlets").select("*").order("name");
+  if (error) throw error;
+  return (data ?? []) as FnbOutlet[];
+}
+
+export async function setOutletOpen(outletId: string, isOpen: boolean): Promise<void> {
+  if (!isSupabaseConfigured()) return;
+  const { error } = await sb().from("fnb_outlets").update({ is_open: isOpen }).eq("id", outletId);
+  if (error) throw error;
+}
+
+export async function fetchFnbInventory(): Promise<FnbInventoryItem[]> {
+  if (!isSupabaseConfigured()) return MOCK_FNB_INVENTORY;
+  const { data, error } = await sb()
+    .from("fnb_inventory_items")
+    .select("*, outlet:fnb_outlets(id, name)")
+    .order("name");
+  if (error) throw error;
+  return (data ?? []) as unknown as FnbInventoryItem[];
+}
+
+/** Record a physical count. Stamps last_counted_at so stale lines are visible. */
+export async function countInventoryItem(itemId: string, onHand: number): Promise<void> {
+  if (!isSupabaseConfigured()) return;
+  const { error } = await sb()
+    .from("fnb_inventory_items")
+    .update({ on_hand: onHand, last_counted_at: new Date().toISOString() })
+    .eq("id", itemId);
+  if (error) throw error;
+}
+
+export async function fetchFnbTempLogs(limit = 40): Promise<FnbTempLog[]> {
+  if (!isSupabaseConfigured()) return MOCK_FNB_TEMP_LOGS.slice(0, limit);
+  const { data, error } = await sb()
+    .from("fnb_temp_logs")
+    .select("*, logger:profiles!logged_by(id, full_name)")
+    .order("created_at", { ascending: false })
+    .limit(limit);
+  if (error) throw error;
+  return (data ?? []) as unknown as FnbTempLog[];
+}
+
+export async function createTempLog(input: {
+  outlet_id: string | null;
+  equipment_label: string;
+  temp_f: number;
+  min_f: number;
+  max_f: number;
+  note?: string | null;
+}): Promise<void> {
+  if (!isSupabaseConfigured()) return;
+  const supabase = sb();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) throw new Error("Not authenticated");
+  const { data: me } = await supabase.from("profiles").select("organization_id").eq("id", user.id).maybeSingle();
+  if (!me?.organization_id) throw new Error("No organization");
+
+  // in_range is a generated column — the database decides pass/fail, not us.
+  const { error } = await supabase.from("fnb_temp_logs").insert({
+    organization_id: me.organization_id,
+    outlet_id: input.outlet_id,
+    equipment_label: input.equipment_label,
+    temp_f: input.temp_f,
+    min_f: input.min_f,
+    max_f: input.max_f,
+    note: input.note ?? null,
+    logged_by: user.id,
+  });
+  if (error) throw error;
+}
+
+// ─── Banquets ────────────────────────────────────────────────────────────────
+export async function fetchBanquetEvents(): Promise<BanquetEvent[]> {
+  if (!isSupabaseConfigured()) return MOCK_BANQUET_EVENTS;
+  const { data, error } = await sb()
+    .from("banquet_events")
+    .select("*, space:spaces(id, name)")
+    .order("starts_at");
+  if (error) throw error;
+  return (data ?? []) as unknown as BanquetEvent[];
+}
+
+export async function createBanquetEvent(input: Partial<BanquetEvent> & {
+  name: string; client_name: string; starts_at: string; ends_at: string;
+}): Promise<void> {
+  if (!isSupabaseConfigured()) return;
+  const supabase = sb();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) throw new Error("Not authenticated");
+  const { data: me } = await supabase.from("profiles").select("organization_id").eq("id", user.id).maybeSingle();
+  if (!me?.organization_id) throw new Error("No organization");
+
+  const { error } = await supabase.from("banquet_events").insert({
+    organization_id: me.organization_id,
+    created_by: user.id,
+    space_id: input.space_id ?? null,
+    name: input.name,
+    client_name: input.client_name,
+    client_email: input.client_email ?? null,
+    client_phone: input.client_phone ?? null,
+    status: input.status ?? "inquiry",
+    setup_style: input.setup_style ?? "banquet_rounds",
+    headcount: input.headcount ?? 0,
+    starts_at: input.starts_at,
+    ends_at: input.ends_at,
+    setup_starts_at: input.setup_starts_at ?? null,
+    teardown_ends_at: input.teardown_ends_at ?? null,
+    quoted_cents: input.quoted_cents ?? null,
+    deposit_paid: input.deposit_paid ?? false,
+    av_needs: input.av_needs ?? [],
+    catering_notes: input.catering_notes ?? null,
+    notes: input.notes ?? null,
+  });
+  if (error) throw error;
+}
+
+export async function updateBanquetEvent(id: string, patch: Partial<BanquetEvent>): Promise<void> {
+  if (!isSupabaseConfigured()) return;
+  const { error } = await sb().from("banquet_events").update(patch).eq("id", id);
+  if (error) throw error;
+}
+
+// ─── Per-user dashboard layout ───────────────────────────────────────────────
+// Persisted on the profile row (migration 015). In demo mode there is no profile
+// to write to, so the hook falls back to localStorage — see useDashboardLayout.
+export async function fetchDashboardLayout(): Promise<DashboardLayout | null> {
+  if (!isSupabaseConfigured()) return null;
+  const supabase = sb();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return null;
+  const { data, error } = await supabase
+    .from("profiles").select("dashboard_layout").eq("id", user.id).maybeSingle();
+  if (error) throw error;
+  return (data?.dashboard_layout as DashboardLayout | null) ?? null;
+}
+
+export async function saveDashboardLayout(layout: DashboardLayout): Promise<void> {
+  if (!isSupabaseConfigured()) return;
+  const supabase = sb();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return;
+  const { error } = await supabase
+    .from("profiles").update({ dashboard_layout: layout }).eq("id", user.id);
+  if (error) throw error;
+}
+
+/** Back to the built-in default. Null — not an empty widget list, which would
+ *  mean "show nothing" and is a different, very confusing state. */
+export async function clearDashboardLayout(): Promise<void> {
+  if (!isSupabaseConfigured()) return;
+  const supabase = sb();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return;
+  const { error } = await supabase
+    .from("profiles").update({ dashboard_layout: null }).eq("id", user.id);
   if (error) throw error;
 }

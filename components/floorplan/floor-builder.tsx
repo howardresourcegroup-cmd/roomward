@@ -499,7 +499,7 @@ export function FloorBuilder({ floor, spaces, onAdd, onAddMany, onRemove, onPatc
                   <motion.div initial={{opacity:0,y:4}} animate={{opacity:1,y:0}} className="space-y-2">
                     <div className="flex items-center justify-between">
                       <p className="text-xs text-muted-foreground">{preview.length} rooms to place</p>
-                      <button onClick={()=>setPreview(null)} className="text-[11px] text-muted-foreground hover:text-muted-foreground">Clear</button>
+                      <button onClick={()=>setPreview(null)} className="text-[11px] text-muted-foreground hover:text-foreground">Clear</button>
                     </div>
                     <div className="max-h-32 overflow-y-auto grid grid-cols-2 sm:grid-cols-3 gap-1">
                       {preview.map((r,i)=>(
@@ -614,7 +614,7 @@ export function FloorBuilder({ floor, spaces, onAdd, onAddMany, onRemove, onPatc
                 <>
                   <div className="flex items-center justify-between">
                     <p className="text-sm font-semibold text-foreground">New Room</p>
-                    <button onClick={()=>setPending(null)} className="h-6 w-6 flex items-center justify-center rounded-lg text-muted-foreground hover:text-muted-foreground"><X className="h-3.5 w-3.5"/></button>
+                    <button onClick={()=>setPending(null)} className="h-6 w-6 flex items-center justify-center rounded-lg text-muted-foreground hover:text-foreground"><X className="h-3.5 w-3.5"/></button>
                   </div>
                   <p className="text-[11px] text-muted-foreground">
                     {pending.w}×{pending.h} cells at ({pending.x},{pending.y})
@@ -635,7 +635,7 @@ export function FloorBuilder({ floor, spaces, onAdd, onAddMany, onRemove, onPatc
                 <>
                   <div className="flex items-center justify-between">
                     <p className="text-sm font-semibold text-foreground">Edit Room</p>
-                    <button onClick={()=>setSelectedId(null)} className="h-6 w-6 flex items-center justify-center rounded-lg text-muted-foreground hover:text-muted-foreground"><X className="h-3.5 w-3.5"/></button>
+                    <button onClick={()=>setSelectedId(null)} className="h-6 w-6 flex items-center justify-center rounded-lg text-muted-foreground hover:text-foreground"><X className="h-3.5 w-3.5"/></button>
                   </div>
                   <p className="text-[11px] text-muted-foreground">
                     {selectedSpace.width}×{selectedSpace.height} cells · ({selectedSpace.position_x},{selectedSpace.position_y})

@@ -139,9 +139,15 @@ export default function AssetsPage() {
                         </span>
                       </td>
                       <td className="px-4 py-3">
+                        {/* Visible by default; only fades out on devices that can
+                            actually hover, so it stays reachable on touch. */}
                         {can("assets.manage") && (
-                          <button onClick={() => setPendingDelete(asset)} className="opacity-0 group-hover:opacity-100 text-muted-foreground hover:text-red-400 transition-all">
-                            <Trash2 className="h-3.5 w-3.5" />
+                          <button
+                            onClick={() => setPendingDelete(asset)}
+                            aria-label={`Delete ${asset.name}`}
+                            className="inline-flex h-9 w-9 items-center justify-center rounded-lg text-muted-foreground transition-all hover:text-red-400 hover:bg-red-500/10 [@media(hover:hover)]:opacity-0 [@media(hover:hover)]:group-hover:opacity-100 focus-visible:opacity-100"
+                          >
+                            <Trash2 className="h-4 w-4" />
                           </button>
                         )}
                       </td>

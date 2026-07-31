@@ -88,7 +88,7 @@ function FloorMapTile({ floor, spaces, mode, guestOnly, onSelect, onOpenFloor }:
         </div>
       )}
 
-      <button onClick={onOpenFloor} className="flex w-full items-center justify-between group">
+      <button onClick={onOpenFloor} className="flex w-full min-h-[32px] items-center justify-between rounded-md group active:scale-[0.99] transition-transform">
         <h3 className="text-xs font-semibold text-foreground group-hover:text-accent-text transition-colors">{floor.name}</h3>
         <span className="text-[10px] text-muted-foreground group-hover:text-accent-text transition-colors">{rooms.length} rooms ›</span>
       </button>

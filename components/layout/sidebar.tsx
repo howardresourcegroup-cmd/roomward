@@ -7,6 +7,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
   LayoutDashboard, Building2, ClipboardList, Users,
   Settings, ChevronLeft, Package, BarChart3, LogOut, MessageSquare, HelpCircle, BedDouble, Map, X, ConciergeBell, Megaphone,
+  UtensilsCrossed, PartyPopper,
 } from "lucide-react";
 import { cn, getInitials } from "@/lib/utils";
 import { useAppStore } from "@/lib/store";
@@ -22,6 +23,8 @@ const NAV_ITEMS = [
   { href: "/work-orders", icon: ClipboardList, label: "Work Orders", perm: "work_orders.view" },
   { href: "/housekeeping", icon: BedDouble, label: "Housekeeping", perm: "buildings.view" },
   { href: "/front-desk", icon: ConciergeBell, label: "Front Desk", perm: "buildings.view" },
+  { href: "/food-beverage", icon: UtensilsCrossed, label: "Food & Beverage", perm: "fnb.view" },
+  { href: "/banquets", icon: PartyPopper, label: "Banquets", perm: "banquets.view" },
   { href: "/messages", icon: MessageSquare, label: "Team Chat", perm: "chat.participate" },
   { href: "/corporate", icon: Megaphone, label: "Corporate", perm: "dashboard.view" },
   { href: "/technicians", icon: Users, label: "Technicians", perm: "team.view" },

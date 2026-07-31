@@ -1,14 +1,28 @@
 "use client";
 
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { motion } from "framer-motion";
-import { TrendingDown, Clock, CheckCircle2, AlertTriangle, Download } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { TrendingDown, Clock, CheckCircle2, AlertTriangle, BarChart3, Moon, Table2 } from "lucide-react";
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid,
   Tooltip, ResponsiveContainer, PieChart, Pie, Cell,
 } from "recharts";
-import { useWorkOrders, useOrganization } from "@/lib/data/hooks";
+import {
+  useWorkOrders, useOrganization, useOccupancy, usePermissions,
+  useHousekeeping, useHousekeepers, useFnbInventory, useBanquetEvents,
+} from "@/lib/data/hooks";
+import { OccupancyStat } from "@/components/analytics/occupancy-stat";
+import { OccupancyTrend } from "@/components/analytics/occupancy-trend";
+import { ReportViewer } from "@/components/reports/report-viewer";
+import {
+  REPORT_CATALOG, occupancyNightly, occupancyByWeekday, workOrdersByCategory,
+  workOrderAging, housekeepingProductivity, stockBelowPar, banquetPipeline,
+  type ReportTable,
+} from "@/lib/reports";
+import {
+  addDays, toStayDate, lastNight, tomorrowNight, sameNightLastWeek, occupancyDelta,
+} from "@/lib/analytics";
+import { cn } from "@/lib/utils";
 import type { WorkOrder } from "@/types";
 
 const CAT_COLORS = ["#6366f1", "#06b6d4", "#f59e0b", "#8b5cf6", "#10b981", "#ef4444", "#52525b"];
@@ -49,9 +63,69 @@ const CustomTooltip = ({ active, payload, label }: { active?: boolean; payload?:
   );
 };
 
+type Tab = "overview" | "occupancy" | "data";
+
+const RANGES = [
+  { days: 7,  label: "7 nights" },
+  { days: 30, label: "30 nights" },
+  { days: 90, label: "90 nights" },
+] as const;
+
 export default function ReportsPage() {
   const { workOrders } = useWorkOrders();
   const { org } = useOrganization();
+  const { can } = usePermissions();
+  const canExport = can("reports.export");
+
+  const [tab, setTab] = useState<Tab>("overview");
+  const [rangeDays, setRangeDays] = useState<number>(30);
+  const [reportId, setReportId] = useState<string>("occupancy_nightly");
+
+  // Widen the window past the range so week-over-week comparisons and the
+  // forward forecast are both available without a second fetch.
+  const today = toStayDate(new Date());
+  const from = addDays(today, -(rangeDays + 7));
+  const to = addDays(today, 14);
+  const { snapshots, loading: occLoading } = useOccupancy(from, to);
+
+  const { rooms } = useHousekeeping();
+  const { housekeepers } = useHousekeepers();
+  const { items: fnbItems } = useFnbInventory();
+  const { events } = useBanquetEvents();
+
+  // Bounded at both ends: "30 nights" means the last 30 nights, not 30 back plus
+  // whatever forecast the fetch window happened to include. The trend chart below
+  // still shows the forward view — that's a chart about where things are heading,
+  // where this is a table of what happened.
+  const inRangeSnaps = useMemo(
+    () => snapshots.filter((s) => s.stay_date >= addDays(today, -rangeDays) && s.stay_date <= today),
+    [snapshots, today, rangeDays]
+  );
+
+  const last = useMemo(() => lastNight(snapshots), [snapshots]);
+  const tomorrow = useMemo(() => tomorrowNight(snapshots), [snapshots]);
+  const lastDelta = useMemo(
+    () => (last ? occupancyDelta(last, sameNightLastWeek(snapshots, last.stay_date)) : null),
+    [last, snapshots]
+  );
+  const tomorrowDelta = useMemo(
+    () => (tomorrow ? occupancyDelta(tomorrow, sameNightLastWeek(snapshots, tomorrow.stay_date)) : null),
+    [tomorrow, snapshots]
+  );
+
+  const activeReport = REPORT_CATALOG.find((r) => r.id === reportId) ?? REPORT_CATALOG[0];
+  const reportTable: ReportTable = useMemo(() => {
+    switch (activeReport.id) {
+      case "occupancy_nightly":  return occupancyNightly(inRangeSnaps);
+      case "occupancy_dow":      return occupancyByWeekday(inRangeSnaps);
+      case "wo_by_category":     return workOrdersByCategory(workOrders);
+      case "wo_aging":           return workOrderAging(workOrders);
+      case "hk_productivity":    return housekeepingProductivity(rooms, housekeepers);
+      case "fnb_below_par":      return stockBelowPar(fnbItems);
+      case "banquet_pipeline":   return banquetPipeline(events);
+      default:                   return { columns: [], rows: [] };
+    }
+  }, [activeReport.id, inRangeSnaps, workOrders, rooms, housekeepers, fnbItems, events]);
 
   const { monthly, categories, kpis } = useMemo(() => {
     const monthly = buildMonthly(workOrders);
@@ -89,17 +163,131 @@ export default function ReportsPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-start justify-between">
+      <div className="flex items-start justify-between gap-3 flex-wrap">
         <div>
           <h1 className="text-2xl font-bold text-foreground">Reports</h1>
           <p className="text-sm text-muted-foreground mt-1">Operations analytics{org?.name ? ` for ${org.name}` : ""}</p>
         </div>
-        <Button variant="secondary">
-          <Download className="h-4 w-4" />
-          Export PDF
-        </Button>
       </div>
 
+      {/* Tabs */}
+      <div className="flex w-fit max-w-full overflow-x-auto rounded-lg border border-border p-0.5 gap-0.5">
+        {([
+          { key: "overview" as Tab,  icon: BarChart3, label: "Maintenance" },
+          { key: "occupancy" as Tab, icon: Moon,      label: "Occupancy" },
+          { key: "data" as Tab,      icon: Table2,    label: "Report viewer" },
+        ]).map(({ key, icon: Icon, label }) => (
+          <button key={key} onClick={() => setTab(key)}
+            className={cn(
+              "inline-flex items-center gap-1.5 whitespace-nowrap text-sm px-4 py-2 rounded-md transition-colors",
+              tab === key ? "bg-foreground/[0.08] text-foreground font-medium" : "text-muted-foreground hover:text-foreground"
+            )}>
+            <Icon className="h-4 w-4" /> {label}
+          </button>
+        ))}
+      </div>
+
+      {/* ── Occupancy ── */}
+      {tab === "occupancy" && (
+        <div className="space-y-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <OccupancyStat kind="last_night" metrics={last} delta={lastDelta} deltaLabel="same night last week" loading={occLoading} />
+            <OccupancyStat kind="tomorrow" metrics={tomorrow} delta={tomorrowDelta} deltaLabel="same night last week" loading={occLoading} />
+          </div>
+
+          <div className="flex items-center gap-2 flex-wrap">
+            <span className="text-xs text-muted-foreground">Show</span>
+            {RANGES.map((r) => (
+              <button key={r.days} onClick={() => setRangeDays(r.days)}
+                className={cn(
+                  "rounded-lg border px-3 py-1.5 text-xs font-medium transition-colors min-h-[32px]",
+                  rangeDays === r.days
+                    ? "border-indigo-500/60 bg-indigo-500/15 text-indigo-300"
+                    : "border-border bg-foreground/[0.03] text-muted-foreground hover:text-foreground"
+                )}>
+                {r.label}
+              </button>
+            ))}
+          </div>
+
+          <OccupancyTrend snapshots={snapshots.filter((s) => s.stay_date >= addDays(today, -rangeDays))} />
+        </div>
+      )}
+
+      {/* ── Report viewer ── */}
+      {tab === "data" && (
+        <div className="grid grid-cols-1 lg:grid-cols-4 gap-4 items-start">
+          {/* On a phone the sidebar list fills the whole first screen before you
+              reach the report itself, so collapse it to a single control there. */}
+          <label className="lg:hidden block">
+            <span className="text-[11px] uppercase tracking-wider text-muted-foreground">Report</span>
+            <select
+              value={reportId}
+              onChange={(e) => setReportId(e.target.value)}
+              className="mt-1 w-full h-10 rounded-lg bg-foreground/[0.04] border border-border px-2 text-sm text-foreground"
+            >
+              {REPORT_CATALOG.map((r) => (
+                <option key={r.id} value={r.id}>{r.group} — {r.name}</option>
+              ))}
+            </select>
+          </label>
+
+          <nav className="lg:col-span-1 glass-card p-3 space-y-3 hidden lg:block" aria-label="Reports">
+            {Object.entries(
+              REPORT_CATALOG.reduce<Record<string, typeof REPORT_CATALOG>>((acc, r) => {
+                (acc[r.group] ??= []).push(r);
+                return acc;
+              }, {})
+            ).map(([group, reports]) => (
+              <div key={group}>
+                <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground px-2 mb-1">{group}</p>
+                <div className="space-y-0.5">
+                  {reports.map((r) => (
+                    <button key={r.id} onClick={() => setReportId(r.id)}
+                      aria-current={reportId === r.id ? "page" : undefined}
+                      className={cn(
+                        "w-full text-left rounded-md px-2 py-2 text-sm transition-colors min-h-[36px]",
+                        reportId === r.id
+                          ? "bg-indigo-500/15 text-indigo-300 font-medium"
+                          : "text-muted-foreground hover:text-foreground hover:bg-foreground/[0.04]"
+                      )}>
+                      {r.name}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </nav>
+
+          <div className="lg:col-span-3 space-y-4">
+            {activeReport.group === "Occupancy" && (
+              <div className="flex items-center gap-2 flex-wrap">
+                <span className="text-xs text-muted-foreground">Period</span>
+                {RANGES.map((r) => (
+                  <button key={r.days} onClick={() => setRangeDays(r.days)}
+                    className={cn(
+                      "rounded-lg border px-3 py-1.5 text-xs font-medium transition-colors min-h-[32px]",
+                      rangeDays === r.days
+                        ? "border-indigo-500/60 bg-indigo-500/15 text-indigo-300"
+                        : "border-border bg-foreground/[0.03] text-muted-foreground hover:text-foreground"
+                    )}>
+                    {r.label}
+                  </button>
+                ))}
+              </div>
+            )}
+            <ReportViewer
+              title={activeReport.name}
+              description={activeReport.description}
+              table={reportTable}
+              canExport={canExport}
+            />
+          </div>
+        </div>
+      )}
+
+      {tab === "overview" && (
+      <>
       {/* KPIs — computed from real work orders */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         {kpis.map(({ label, value, icon: Icon, color, bg }, i) => (
@@ -167,6 +355,8 @@ export default function ReportsPage() {
           </div>
         </div>
       </div>
+      </>
+      )}
     </div>
   );
 }

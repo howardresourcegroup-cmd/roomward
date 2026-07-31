@@ -8,7 +8,8 @@ import { fetchRoles, fetchMyPermissions } from "./roles";
 import type {
   Building, Floor, Space, WorkOrder, Profile, Channel, Message, Role, Asset,
   SpaceStatus, HousekeepingStatus, WorkOrderStatus, DashboardStats, ActivityItem,
-  AuditLog, Announcement,
+  AuditLog, Announcement, OccupancySnapshot, FnbOutlet, FnbInventoryItem,
+  FnbTempLog, BanquetEvent, DashboardLayout,
 } from "@/types";
 
 // ─── Tiny stale-while-revalidate cache ────────────────────────────────────────
@@ -19,15 +20,18 @@ const cache = new Map<string, unknown>();
 function useCachedQuery<T>(key: string, fetcher: () => Promise<T>, initial: T) {
   const [data, setData] = useState<T>((cache.get(key) as T) ?? initial);
   const [loading, setLoading] = useState(!cache.has(key));
+  // Kept so callers can tell "this is empty" from "this did not load" and say so.
+  const [error, setError] = useState<Error | null>(null);
 
   const reload = useCallback(() => {
+    setError(null);
     fetcher().then((d) => { cache.set(key, d); setData(d); setLoading(false); })
-             .catch(() => setLoading(false));
+             .catch((e) => { setError(e instanceof Error ? e : new Error(String(e))); setLoading(false); });
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [key]);
 
   useEffect(() => { reload(); }, [reload]);
-  return { data, loading, reload, setData };
+  return { data, loading, error, reload, setData };
 }
 
 // ─── Buildings list ───────────────────────────────────────────────────────────
@@ -44,6 +48,11 @@ export function useBuildingDetail(buildingId: string) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    // Callers pick a building asynchronously (Property Map defaults to the first
+    // one once the list arrives), so this runs with an empty id first. Querying
+    // on it sends `id=eq.` and Postgres rejects the whole request — stay in
+    // `loading` until there's a real id to ask about.
+    if (!buildingId) return;
     let active = true;
     Promise.all([
       q.fetchBuilding(buildingId),
@@ -58,6 +67,7 @@ export function useBuildingDetail(buildingId: string) {
 
   // Realtime: reflect space status changes from other users
   useEffect(() => {
+    if (!buildingId) return;
     const supabase = createClient();
     const channel = supabase
       .channel(`spaces-${buildingId}`)
@@ -173,7 +183,37 @@ export function useHousekeeping() {
     }
   }, []);
 
-  return { rooms, loading, setStatus };
+  /** Give one or more rooms to a housekeeper; pass null to clear the assignment. */
+  const assign = useCallback(async (spaceIds: string[], housekeeper: Profile | null) => {
+    if (spaceIds.length === 0) return;
+    const ids = new Set(spaceIds);
+    const before = new Map<string, { id: string | null | undefined; who: Space["housekeeper"] }>();
+    const stamp = housekeeper ? new Date().toISOString() : null;
+
+    setRooms((cur) => cur.map((s) => {
+      if (!ids.has(s.id)) return s;
+      before.set(s.id, { id: s.housekeeper_id, who: s.housekeeper });
+      return {
+        ...s,
+        housekeeper_id: housekeeper?.id ?? null,
+        housekeeping_assigned_at: stamp,
+        housekeeper: housekeeper
+          ? { id: housekeeper.id, full_name: housekeeper.full_name, avatar_url: housekeeper.avatar_url }
+          : null,
+      };
+    }));
+
+    try { await q.assignHousekeeperBulk(spaceIds, housekeeper?.id ?? null); }
+    catch {
+      setRooms((cur) => cur.map((s) => {
+        const was = before.get(s.id);
+        return was ? { ...s, housekeeper_id: was.id, housekeeper: was.who } : s;
+      }));
+      toast.error("Couldn't save that assignment. Please try again.");
+    }
+  }, []);
+
+  return { rooms, loading, setStatus, assign };
 }
 
 export function useCurrentProfile() {
@@ -207,6 +247,8 @@ export interface BillingState {
   isActive: boolean;
   isTrialing: boolean;
   isExpired: boolean;
+  /** False until the org row has actually loaded — see `useBilling`. */
+  known: boolean;
   loading: boolean;
 }
 
@@ -214,16 +256,23 @@ export function useBilling(): BillingState & { reload: () => void } {
   const { data, loading, reload } = useCachedQuery<{ subscription_status?: string; trial_ends_at?: string; is_demo?: boolean } | null>(
     "billing", q.fetchOrganization, null
   );
+  // `fetchOrganization` returns null for "no session yet", "profile not readable",
+  // and "request failed" alike — an *unknown* state, not an expired one. Reading
+  // unknown as expired put the whole app behind the paywall overlay after any
+  // transient blip (offline, token refresh mid-flight, RLS hiccup), so every
+  // billing verdict below is gated on `known`.
+  const known = !!data;
   const isDemo = data?.is_demo ?? false;
   const status = (data?.subscription_status ?? "trial") as BillingState["status"];
   const trialEndsAt = data?.trial_ends_at ?? null;
   const msLeft = trialEndsAt ? +new Date(trialEndsAt) - Date.now() : 0;
   const daysLeft = Math.max(0, Math.ceil(msLeft / 86400000));
   // Demo orgs are always treated as active — no paywall or trial countdown.
-  const isActive = isDemo || status === "active";
-  const isTrialing = !isDemo && status === "trial" && msLeft > 0;
-  const isExpired = !isDemo && status === "trial" && msLeft <= 0;
-  return { status, trialEndsAt, daysLeft, isActive, isTrialing, isExpired, loading, reload };
+  const isActive = isDemo || (known && status === "active");
+  const isTrialing = known && !isDemo && status === "trial" && msLeft > 0;
+  // A trial with no end date recorded has not ended; only a date in the past has.
+  const isExpired = known && !isDemo && status === "trial" && !!trialEndsAt && msLeft <= 0;
+  return { status, trialEndsAt, daysLeft, isActive, isTrialing, isExpired, known, loading, reload };
 }
 
 // ─── Dashboard stats ──────────────────────────────────────────────────────────
@@ -290,13 +339,13 @@ export function useMessages(channelId: string | null) {
 export function useAuditLogs(filter?: string) {
   const key = `audit_logs:${filter ?? "all"}`;
   const fetcher = useCallback(() => q.fetchAuditLogs(60, filter), [filter]);
-  const { data, loading, reload } = useCachedQuery<AuditLog[]>(key, fetcher, []);
-  return { logs: data, loading, reload };
+  const { data, loading, error, reload } = useCachedQuery<AuditLog[]>(key, fetcher, []);
+  return { logs: data, loading, error, reload };
 }
 
 export function useAnnouncements() {
   const supabase = createClient();
-  const { data, loading, reload, setData } = useCachedQuery<Announcement[]>(
+  const { data, loading, error, reload, setData } = useCachedQuery<Announcement[]>(
     "announcements", q.fetchAnnouncements, []
   );
 
@@ -322,5 +371,145 @@ export function useAnnouncements() {
     setData((prev) => prev.filter((a) => a.id !== id));
   }, [setData]);
 
-  return { announcements: data, loading, post, remove, reload };
+  return { announcements: data, loading, error, post, remove, reload };
+}
+
+// ─── Housekeeping assignment ─────────────────────────────────────────────────
+export function useHousekeepers() {
+  const { data, loading, error } = useCachedQuery<Profile[]>("housekeepers", q.fetchHousekeepers, []);
+  return { housekeepers: data, loading, error };
+}
+
+// ─── Occupancy analytics ─────────────────────────────────────────────────────
+/**
+ * Nights from `from` to `to` (YYYY-MM-DD, inclusive). Callers pass explicit
+ * dates rather than a day count so the cache key is stable across re-renders
+ * and two widgets asking for the same window share one fetch.
+ */
+export function useOccupancy(from: string, to: string) {
+  const key = `occupancy:${from}:${to}`;
+  const fetcher = useCallback(() => q.fetchOccupancy(from, to), [from, to]);
+  const { data, loading, error, reload } = useCachedQuery<OccupancySnapshot[]>(key, fetcher, []);
+  return { snapshots: data, loading, error, reload };
+}
+
+// ─── Food & Beverage ─────────────────────────────────────────────────────────
+export function useFnbOutlets() {
+  const { data, loading, error, reload, setData } = useCachedQuery<FnbOutlet[]>("fnb_outlets", q.fetchFnbOutlets, []);
+
+  const toggleOpen = useCallback(async (outletId: string, isOpen: boolean) => {
+    setData((prev) => prev.map((o) => (o.id === outletId ? { ...o, is_open: isOpen } : o))); // optimistic
+    try { await q.setOutletOpen(outletId, isOpen); }
+    catch {
+      setData((prev) => prev.map((o) => (o.id === outletId ? { ...o, is_open: !isOpen } : o)));
+      toast.error("Couldn't update the outlet");
+    }
+  }, [setData]);
+
+  return { outlets: data, loading, error, reload, toggleOpen };
+}
+
+export function useFnbInventory() {
+  const { data, loading, error, reload, setData } = useCachedQuery<FnbInventoryItem[]>(
+    "fnb_inventory", q.fetchFnbInventory, []
+  );
+
+  const count = useCallback(async (itemId: string, onHand: number) => {
+    let prev: number | undefined;
+    setData((cur) => cur.map((i) => {
+      if (i.id === itemId) { prev = i.on_hand; return { ...i, on_hand: onHand, last_counted_at: new Date().toISOString() }; }
+      return i;
+    }));
+    try { await q.countInventoryItem(itemId, onHand); }
+    catch {
+      setData((cur) => cur.map((i) => (i.id === itemId && prev !== undefined ? { ...i, on_hand: prev } : i)));
+      toast.error("Couldn't save that count");
+    }
+  }, [setData]);
+
+  return { items: data, loading, error, reload, count };
+}
+
+export function useFnbTempLogs(limit = 40) {
+  const fetcher = useCallback(() => q.fetchFnbTempLogs(limit), [limit]);
+  const { data, loading, error, reload } = useCachedQuery<FnbTempLog[]>(`fnb_temps:${limit}`, fetcher, []);
+
+  const log = useCallback(async (input: {
+    outlet_id: string | null; equipment_label: string;
+    temp_f: number; min_f: number; max_f: number; note?: string | null;
+  }) => {
+    await q.createTempLog(input);
+    reload();
+  }, [reload]);
+
+  return { logs: data, loading, error, reload, log };
+}
+
+// ─── Banquets ────────────────────────────────────────────────────────────────
+export function useBanquetEvents() {
+  const { data, loading, error, reload } = useCachedQuery<BanquetEvent[]>("banquet_events", q.fetchBanquetEvents, []);
+
+  const create = useCallback(async (input: Parameters<typeof q.createBanquetEvent>[0]) => {
+    await q.createBanquetEvent(input);
+    reload();
+  }, [reload]);
+
+  const update = useCallback(async (id: string, patch: Partial<BanquetEvent>) => {
+    await q.updateBanquetEvent(id, patch);
+    reload();
+  }, [reload]);
+
+  return { events: data, loading, error, reload, create, update };
+}
+
+// ─── Per-user dashboard layout ───────────────────────────────────────────────
+const LAYOUT_STORAGE_KEY = "facilityflow-dashboard-layout";
+
+/**
+ * A person's own dashboard arrangement.
+ *
+ * Writes go to the profile row when Supabase is configured, and to localStorage
+ * otherwise, so the demo is still genuinely customizable. State is applied
+ * locally first and persisted after: rearranging your own dashboard should never
+ * feel like it is waiting on a round trip.
+ */
+export function useDashboardLayout() {
+  const [layout, setLayout] = useState<DashboardLayout | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    let active = true;
+    (async () => {
+      try {
+        const remote = await q.fetchDashboardLayout();
+        if (!active) return;
+        if (remote) { setLayout(remote); setLoading(false); return; }
+      } catch {
+        // fall through to local
+      }
+      if (!active) return;
+      try {
+        const raw = typeof window !== "undefined" ? localStorage.getItem(LAYOUT_STORAGE_KEY) : null;
+        setLayout(raw ? (JSON.parse(raw) as DashboardLayout) : null);
+      } catch {
+        setLayout(null); // corrupt value — fall back to the built-in default
+      }
+      setLoading(false);
+    })();
+    return () => { active = false; };
+  }, []);
+
+  const save = useCallback((next: DashboardLayout) => {
+    setLayout(next);
+    try { localStorage.setItem(LAYOUT_STORAGE_KEY, JSON.stringify(next)); } catch { /* private mode */ }
+    q.saveDashboardLayout(next).catch(() => { /* local copy already applied */ });
+  }, []);
+
+  const reset = useCallback(() => {
+    setLayout(null);
+    try { localStorage.removeItem(LAYOUT_STORAGE_KEY); } catch { /* ignore */ }
+    q.clearDashboardLayout().catch(() => { /* local copy already cleared */ });
+  }, []);
+
+  return { layout, loading, save, reset };
 }

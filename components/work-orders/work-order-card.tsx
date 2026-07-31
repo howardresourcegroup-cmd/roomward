@@ -36,7 +36,7 @@ export function WorkOrderCard({ order, index = 0 }: WorkOrderCardProps) {
             <h3 className="text-sm font-medium text-foreground group-hover:text-white transition-colors leading-snug line-clamp-1">
               {order.title}
             </h3>
-            <ArrowRight className="h-4 w-4 text-muted-foreground group-hover:text-muted-foreground group-hover:translate-x-1 transition-all shrink-0 mt-0.5" />
+            <ArrowRight className="h-4 w-4 text-muted-foreground group-hover:text-foreground group-hover:translate-x-1 transition-all shrink-0 mt-0.5" />
           </div>
 
           {/* Meta row */}

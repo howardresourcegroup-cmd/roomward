@@ -1,12 +1,14 @@
 "use client";
 
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { motion } from "framer-motion";
-import { Sparkles, BedDouble, CircleCheck, Ban, ArrowRight } from "lucide-react";
-import { useHousekeeping, usePermissions, useCurrentProfile } from "@/lib/data/hooks";
+import { Sparkles, BedDouble, CircleCheck, Ban, ArrowRight, LayoutGrid, Users } from "lucide-react";
+import { useHousekeeping, usePermissions, useCurrentProfile, useHousekeepers } from "@/lib/data/hooks";
 import { PageLoader } from "@/components/shared/loading-spinner";
 import { OccupancyBadge } from "@/components/rooms/occupancy-badge";
-import { cn } from "@/lib/utils";
+import { AssignmentBoard } from "@/components/housekeeping/assignment-board";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { cn, getInitials } from "@/lib/utils";
 import type { HousekeepingStatus, Space } from "@/types";
 
 const COLUMNS: { status: HousekeepingStatus; label: string; color: string; bg: string; border: string; dot: string }[] = [
@@ -23,18 +25,36 @@ const NEXT: Partial<Record<HousekeepingStatus, { to: HousekeepingStatus; label: 
   cleaned:     { to: "ready",       label: "Inspect → Ready", managerOnly: true },
 };
 
+type View = "board" | "assignments";
+
 export default function HousekeepingPage() {
-  const { rooms, loading, setStatus } = useHousekeeping();
+  const { rooms, loading, setStatus, assign } = useHousekeeping();
+  const { housekeepers } = useHousekeepers();
   const { can } = usePermissions();
   const me = useCurrentProfile();
   const isManager = me?.role === "manager" || me?.role === "admin";
   const canClean = can("spaces.update_status");
+  const canAssign = can("housekeeping.assign");
+
+  const [view, setView] = useState<View>("board");
+  // Housekeepers overwhelmingly want their own list, not the whole property.
+  const [mineOnly, setMineOnly] = useState(false);
+
+  const visibleRooms = useMemo(
+    () => (mineOnly && me?.id ? rooms.filter((r) => r.housekeeper_id === me.id) : rooms),
+    [rooms, mineOnly, me?.id]
+  );
+
+  const myRoomCount = useMemo(
+    () => (me?.id ? rooms.filter((r) => r.housekeeper_id === me.id).length : 0),
+    [rooms, me?.id]
+  );
 
   const byStatus = useMemo(() => {
     const map: Record<string, Space[]> = { dirty: [], in_progress: [], cleaned: [], ready: [], out_of_service: [] };
-    for (const r of rooms) (map[r.housekeeping_status ?? "ready"] ??= []).push(r);
+    for (const r of visibleRooms) (map[r.housekeeping_status ?? "ready"] ??= []).push(r);
     return map;
-  }, [rooms]);
+  }, [visibleRooms]);
 
   const readyCount = byStatus.ready?.length ?? 0;
   const dirtyCount = byStatus.dirty?.length ?? 0;
@@ -48,14 +68,56 @@ export default function HousekeepingPage() {
       <div className="flex items-start justify-between flex-wrap gap-3">
         <div>
           <h1 className="text-2xl font-bold text-foreground">Housekeeping Board</h1>
-          <div className="flex items-center gap-3 mt-1.5 text-xs">
+          <div className="flex items-center gap-3 mt-1.5 text-xs flex-wrap">
             <span className="flex items-center gap-1.5 text-emerald-400"><CircleCheck className="h-3.5 w-3.5" />{readyCount} ready for check-in</span>
             <span className="flex items-center gap-1.5 text-red-400"><BedDouble className="h-3.5 w-3.5" />{dirtyCount} to clean</span>
             <span className="flex items-center gap-1.5 text-muted-foreground"><span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse" />Live</span>
           </div>
         </div>
+
+        <div className="flex items-center gap-2 flex-wrap">
+          {myRoomCount > 0 && (
+            <button
+              onClick={() => setMineOnly((v) => !v)}
+              aria-pressed={mineOnly}
+              className={cn(
+                "rounded-lg border px-3 py-2 text-xs font-medium transition-colors min-h-[36px]",
+                mineOnly
+                  ? "border-indigo-500/60 bg-indigo-500/15 text-indigo-300"
+                  : "border-border bg-foreground/[0.03] text-muted-foreground hover:text-foreground"
+              )}
+            >
+              My rooms ({myRoomCount})
+            </button>
+          )}
+
+          <div className="flex w-fit max-w-full overflow-x-auto rounded-lg border border-border p-0.5 gap-0.5">
+            {([
+              { key: "board" as View, icon: LayoutGrid, label: "By status" },
+              { key: "assignments" as View, icon: Users, label: "By person" },
+            ]).map(({ key, icon: Icon, label }) => (
+              <button key={key} onClick={() => setView(key)}
+                className={cn(
+                  "inline-flex items-center gap-1.5 whitespace-nowrap text-sm px-3 py-1.5 rounded-md transition-colors",
+                  view === key ? "bg-foreground/[0.08] text-foreground font-medium" : "text-muted-foreground hover:text-foreground"
+                )}>
+                <Icon className="h-4 w-4" /> {label}
+              </button>
+            ))}
+          </div>
+        </div>
       </div>
 
+      {view === "assignments" ? (
+        <AssignmentBoard
+          rooms={visibleRooms}
+          housekeepers={housekeepers}
+          canAssign={canAssign}
+          currentUserId={me?.id}
+          onAssign={assign}
+        />
+      ) : (
+      <>
       {/* Board */}
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
         {COLUMNS.map((col) => {
@@ -88,8 +150,19 @@ export default function HousekeepingPage() {
                           {(room as Space & { floor?: { building?: { name: string } } }).floor?.building?.name?.split(" ")[0] ?? ""}
                         </span>
                       </div>
-                      <div className="mt-1.5">
+                      <div className="mt-1.5 flex items-center justify-between gap-2">
                         <OccupancyBadge occupancy={room.occupancy} />
+                        {room.housekeeper && (
+                          <span className="flex items-center gap-1 min-w-0" title={`Assigned to ${room.housekeeper.full_name}`}>
+                            <Avatar className="h-4 w-4 shrink-0">
+                              <AvatarImage src={room.housekeeper.avatar_url ?? undefined} />
+                              <AvatarFallback className="text-[8px]">{getInitials(room.housekeeper.full_name)}</AvatarFallback>
+                            </Avatar>
+                            <span className="text-[10px] text-muted-foreground truncate">
+                              {room.housekeeper.full_name.split(" ")[0]}
+                            </span>
+                          </span>
+                        )}
                       </div>
                       {next && canClean && (
                         <button
@@ -114,7 +187,7 @@ export default function HousekeepingPage() {
                       )}
                       {col.status === "ready" && canClean && (
                         <button onClick={() => setStatus(room.id, "dirty")}
-                          className="mt-1 w-full text-[10px] text-muted-foreground hover:text-muted-foreground transition-colors">
+                          className="mt-1 w-full min-h-[32px] rounded-md text-[11px] text-muted-foreground hover:text-foreground hover:bg-foreground/[0.05] active:scale-[0.98] transition-all">
                           Mark dirty (checkout)
                         </button>
                       )}
@@ -141,6 +214,14 @@ export default function HousekeepingPage() {
             ))}
           </div>
         </div>
+      )}
+      </>
+      )}
+
+      {mineOnly && visibleRooms.length === 0 && (
+        <p className="text-sm text-muted-foreground text-center py-6">
+          Nothing assigned to you right now.
+        </p>
       )}
 
       {!canClean && (

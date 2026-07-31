@@ -98,7 +98,7 @@ function RoomDetailPanel({
         </div>
         <button
           onClick={onClose}
-          className="h-7 w-7 flex items-center justify-center rounded-lg text-muted-foreground hover:text-muted-foreground hover:bg-foreground/[0.06] transition-colors shrink-0 ml-2"
+          className="h-7 w-7 flex items-center justify-center rounded-lg text-muted-foreground hover:text-foreground hover:bg-foreground/[0.06] transition-colors shrink-0 ml-2"
         >
           <X className="h-3.5 w-3.5" />
         </button>

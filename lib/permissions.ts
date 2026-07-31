@@ -64,9 +64,30 @@ export const PERMISSION_CATALOG: PermissionGroup[] = [
     ],
   },
   {
+    area: "Housekeeping",
+    permissions: [
+      { key: "housekeeping.assign", label: "Assign rooms", description: "Give housekeepers their room boards" },
+    ],
+  },
+  {
     area: "Reports",
     permissions: [
       { key: "reports.view", label: "View reports", description: "See analytics and KPIs" },
+      { key: "reports.export", label: "Export reports", description: "Download report data as CSV" },
+    ],
+  },
+  {
+    area: "Food & Beverage",
+    permissions: [
+      { key: "fnb.view", label: "View F&B", description: "See outlets, stock levels and temperature logs" },
+      { key: "fnb.manage", label: "Manage F&B", description: "Edit outlets, count stock, record temperatures" },
+    ],
+  },
+  {
+    area: "Banquets",
+    permissions: [
+      { key: "banquets.view", label: "View banquets", description: "See the conference & event calendar" },
+      { key: "banquets.manage", label: "Manage banquets", description: "Book, edit and cancel events" },
     ],
   },
   {

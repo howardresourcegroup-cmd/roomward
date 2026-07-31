@@ -127,7 +127,16 @@ export default function SettingsPage() {
           {activeSection === "billing" && (
             <div>
               <h2 className="text-base font-semibold text-foreground mb-4">Billing &amp; Plan</h2>
-              {billing.isActive ? (
+              {!billing.known ? (
+                <div className="rounded-xl bg-foreground/[0.03] border border-border p-4">
+                  <p className="text-sm text-muted-foreground">
+                    {billing.loading ? "Loading your plan…" : "We couldn't load your plan just now."}
+                  </p>
+                  {!billing.loading && (
+                    <Button size="sm" variant="outline" className="mt-3" onClick={billing.reload}>Try again</Button>
+                  )}
+                </div>
+              ) : billing.isActive ? (
                 <div className="rounded-xl bg-emerald-500/10 border border-emerald-500/20 p-4">
                   <div className="flex items-center gap-2">
                     <Check className="h-4 w-4 text-emerald-400" />

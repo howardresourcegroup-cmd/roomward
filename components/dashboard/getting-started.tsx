@@ -56,7 +56,8 @@ export function GettingStarted() {
               <p className="text-xs text-muted-foreground">{completed} of {CHECKLIST.length} done · {pct}%</p>
             </div>
           </div>
-          <button onClick={dismiss} className="text-muted-foreground hover:text-muted-foreground transition-colors" title="Dismiss">
+          <button onClick={dismiss} title="Dismiss" aria-label="Dismiss setup checklist"
+            className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-muted-foreground hover:text-foreground hover:bg-foreground/[0.06] transition-colors">
             <X className="h-4 w-4" />
           </button>
         </div>
@@ -71,31 +72,38 @@ export function GettingStarted() {
             const isDone = !!done[item.id];
             return (
               <div key={item.id} className="flex items-center gap-3 group">
+                {/* 20px tick, 36px hit area — comfortable to tap without
+                    making the checklist look chunky. */}
                 <button
                   onClick={() => toggle(item.id)}
-                  className={cn(
-                    "h-5 w-5 rounded-md border flex items-center justify-center shrink-0 transition-all",
-                    isDone ? "bg-indigo-500 border-indigo-500" : "border-border hover:border-indigo-500/50"
-                  )}
+                  role="checkbox"
+                  aria-checked={isDone}
+                  aria-label={item.label}
+                  className="-m-2 p-2 shrink-0 inline-flex items-center justify-center group/check"
                 >
-                  {isDone && <Check className="h-3 w-3 text-white" />}
+                  <span className={cn(
+                    "h-5 w-5 rounded-md border flex items-center justify-center transition-all",
+                    isDone ? "bg-indigo-500 border-indigo-500" : "border-border group-hover/check:border-indigo-500/50"
+                  )}>
+                    {isDone && <Check className="h-3 w-3 text-white" />}
+                  </span>
                 </button>
                 <Link
                   href={item.href}
                   className={cn(
-                    "flex-1 flex items-center justify-between text-sm transition-colors py-0.5",
-                    isDone ? "text-muted-foreground line-through" : "text-foreground hover:text-foreground"
+                    "flex-1 flex items-center justify-between text-sm transition-colors min-h-[36px] py-1.5",
+                    isDone ? "text-muted-foreground line-through" : "text-foreground hover:text-accent-text"
                   )}
                 >
                   {item.label}
-                  {!isDone && <ChevronRight className="h-3.5 w-3.5 text-muted-foreground group-hover:text-muted-foreground" />}
+                  {!isDone && <ChevronRight className="h-3.5 w-3.5 text-muted-foreground group-hover:text-foreground" />}
                 </Link>
               </div>
             );
           })}
         </div>
 
-        <Link href="/help" className="inline-flex items-center gap-1 text-xs text-indigo-400 hover:text-indigo-300 mt-4 transition-colors">
+        <Link href="/help" className="tap-relaxed inline-flex items-center gap-1 text-xs text-indigo-400 hover:text-indigo-300 mt-4 transition-colors">
           Browse all guides
           <ChevronRight className="h-3 w-3" />
         </Link>

@@ -36,7 +36,7 @@ export function BuildingHealth({ buildings = MOCK_BUILDINGS }: { buildings?: Bui
           <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Building Status</p>
           <p className="text-base font-semibold text-foreground mt-0.5">Portfolio Health</p>
         </div>
-        <Link href="/buildings" className="text-xs text-indigo-400 hover:text-indigo-300 flex items-center gap-1 transition-colors">
+        <Link href="/buildings" className="tap-relaxed text-xs text-indigo-400 hover:text-indigo-300 flex items-center gap-1 transition-colors">
           View all <ArrowRight className="h-3 w-3" />
         </Link>
       </div>

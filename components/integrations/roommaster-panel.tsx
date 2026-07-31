@@ -213,7 +213,7 @@ export function RoomMasterPanel() {
 
               <button
                 onClick={() => setExpanded(false)}
-                className="text-xs text-muted-foreground hover:text-muted-foreground transition-colors w-full text-center pt-1"
+                className="text-xs text-muted-foreground hover:text-foreground transition-colors w-full text-center pt-1"
               >
                 Collapse
               </button>
@@ -273,7 +273,7 @@ export function IntegrationsPanel() {
         </div>
         <button
           onClick={() => toast.info("Don't see your PMS? Request it and our team will set up the connection.")}
-          className="text-xs text-indigo-400 hover:text-indigo-300 flex items-center gap-1 transition-colors"
+          className="tap-relaxed text-xs text-indigo-400 hover:text-indigo-300 flex items-center gap-1 transition-colors"
         >
           Request another <ExternalLink className="h-3 w-3" />
         </button>

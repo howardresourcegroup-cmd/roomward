@@ -180,6 +180,18 @@ body {
     color: rgb(var(--muted-foreground));
     @apply text-xs font-medium uppercase tracking-wider;
   }
+
+  /* Grows a small inline control's touch area to a comfortable size without
+     changing its box, so "View all →" links stay visually light but are still
+     easy to hit with a thumb. */
+  .tap-relaxed {
+    @apply relative;
+  }
+  .tap-relaxed::after {
+    content: "";
+    position: absolute;
+    inset: -12px -10px;
+  }
 }
 
 /* Dot grid background for floorplan */

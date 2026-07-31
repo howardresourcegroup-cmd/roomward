@@ -126,7 +126,7 @@ export function EpturaPanel() {
                 ))}
               </div>
 
-              <button onClick={() => setExpanded(false)} className="text-xs text-muted-foreground hover:text-muted-foreground transition-colors w-full text-center pt-1">
+              <button onClick={() => setExpanded(false)} className="text-xs text-muted-foreground hover:text-foreground transition-colors w-full text-center pt-1">
                 Collapse
               </button>
             </div>

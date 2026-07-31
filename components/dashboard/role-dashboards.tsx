@@ -47,7 +47,7 @@ export function MaintenanceDashboard({ profile }: { profile: Profile }) {
       <div>
         <div className="flex items-center justify-between mb-3">
           <h2 className="text-sm font-semibold text-foreground">Your active jobs</h2>
-          <Link href="/work-orders" className="text-xs text-indigo-400 hover:text-indigo-300">All work orders →</Link>
+          <Link href="/work-orders" className="tap-relaxed text-xs text-indigo-400 hover:text-indigo-300">All work orders →</Link>
         </div>
         {active.length === 0 ? (
           <div className="glass-card p-8 text-center text-sm text-muted-foreground">
@@ -139,7 +139,7 @@ export function FrontDeskDashboard({ profile }: { profile: Profile }) {
         </div>
       </div>
 
-      <Link href="/housekeeping" className="text-xs text-indigo-400 hover:text-indigo-300 inline-flex items-center gap-1">
+      <Link href="/housekeeping" className="tap-relaxed text-xs text-indigo-400 hover:text-indigo-300 inline-flex items-center gap-1">
         View full housekeeping board <ArrowRight className="h-3 w-3" />
       </Link>
 

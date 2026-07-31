@@ -97,7 +97,7 @@ export function UpgradeModal({ open, onClose }: { open: boolean; onClose: () => 
           <div className="p-6">
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-sm font-semibold text-foreground">Payment details</h3>
-              <button onClick={onClose} className="text-muted-foreground hover:text-muted-foreground"><X className="h-4 w-4" /></button>
+              <button onClick={onClose} className="text-muted-foreground hover:text-foreground"><X className="h-4 w-4" /></button>
             </div>
 
             {loading && <p className="text-xs text-muted-foreground py-8 text-center">Preparing secure checkout…</p>}

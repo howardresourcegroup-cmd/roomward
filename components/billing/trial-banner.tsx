@@ -9,8 +9,15 @@ import { UpgradeModal } from "./upgrade-modal";
 import { cn } from "@/lib/utils";
 
 export function TrialBanner() {
-  const { isActive, isTrialing, isExpired, daysLeft, loading } = useBilling();
+  const { isActive, isTrialing, isExpired, daysLeft, loading, reload } = useBilling();
   const [open, setOpen] = useState(false);
+
+  const signOut = async () => {
+    const { createClient } = await import("@/lib/supabase/client");
+    await createClient().auth.signOut().catch(() => {});
+    await fetch("/api/auth/logout", { method: "POST", credentials: "same-origin" }).catch(() => {});
+    window.location.href = "/login";
+  };
 
   if (loading || isActive) return null;
 
@@ -36,7 +43,10 @@ export function TrialBanner() {
     );
   }
 
-  // Trial expired → full soft paywall overlay
+  // Trial expired → full soft paywall overlay.
+  // It covers the app, so it always keeps two ways out: re-check the plan (in case
+  // a payment just landed, or the org read was stale) and sign out. A blocking
+  // screen with no exit is how people get stranded.
   if (isExpired) {
     return (
       <>
@@ -50,12 +60,22 @@ export function TrialBanner() {
             </div>
             <h2 className="text-xl font-bold text-foreground">Your free trial has ended</h2>
             <p className="text-sm text-muted-foreground mt-2">
-              Subscribe to keep your team running on Roomward. Your data is safe and waiting.
+              Subscribe to keep your team running on Roomward. Every building, work order,
+              and photo is exactly where you left it.
             </p>
             <Button className="w-full mt-5" onClick={() => setOpen(true)}>
               <Sparkles className="h-4 w-4" />
               Subscribe to Roomward Pro
             </Button>
+            <div className="flex items-center justify-center gap-4 mt-4 text-[11px]">
+              <button onClick={reload} className="text-muted-foreground hover:text-foreground transition-colors">
+                Already subscribed? Refresh
+              </button>
+              <span className="text-border">·</span>
+              <button onClick={signOut} className="text-muted-foreground hover:text-foreground transition-colors">
+                Sign out
+              </button>
+            </div>
             <p className="text-[11px] text-muted-foreground mt-3">Questions? support@roomward.app</p>
           </motion.div>
         </div>

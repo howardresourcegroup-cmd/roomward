@@ -9,6 +9,8 @@ import {
 import { getInitials, cn } from "@/lib/utils";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { AnnouncementComposer } from "@/components/corporate/announcement-composer";
+import { EmptyState } from "@/components/shared/empty-state";
+import { ErrorState } from "@/components/shared/error-state";
 import {
   useAnnouncements, useAuditLogs, useCurrentProfile,
 } from "@/lib/data/hooks";
@@ -76,8 +78,8 @@ export default function CorporatePage() {
   const [staffLoading, setStaffLoading] = useState(false);
 
   const profile = useCurrentProfile();
-  const { announcements, loading: annLoading, post, remove } = useAnnouncements();
-  const { logs, loading: logLoading, reload: reloadLogs } = useAuditLogs(auditFilter);
+  const { announcements, loading: annLoading, error: annError, post, remove, reload: reloadAnnouncements } = useAnnouncements();
+  const { logs, loading: logLoading, error: logError, reload: reloadLogs } = useAuditLogs(auditFilter);
 
   const canPost = profile?.role === "admin" || profile?.role === "manager" || profile?.role === "hr";
   const canDelete = profile?.role === "admin";
@@ -114,7 +116,7 @@ export default function CorporatePage() {
       </div>
 
       {/* Tabs */}
-      <div className="inline-flex rounded-lg border border-border p-0.5 gap-0.5">
+      <div className="flex w-fit max-w-full overflow-x-auto rounded-lg border border-border p-0.5 gap-0.5">
         {([
           { key: "announcements", icon: Megaphone,   label: "Announcements" },
           { key: "staff",         icon: Users,        label: "Staff" },
@@ -122,7 +124,7 @@ export default function CorporatePage() {
         ] as { key: Tab; icon: React.ElementType; label: string }[]).map(({ key, icon: Icon, label }) => (
           <button key={key} onClick={() => setTab(key)}
             className={cn(
-              "inline-flex items-center gap-1.5 text-sm px-4 py-2 rounded-md transition-colors",
+              "inline-flex items-center gap-1.5 whitespace-nowrap text-sm px-4 py-2 rounded-md transition-colors",
               tab === key ? "bg-foreground/[0.08] text-foreground font-medium" : "text-muted-foreground hover:text-foreground"
             )}>
             <Icon className="h-4 w-4" /> {label}
@@ -168,9 +170,23 @@ export default function CorporatePage() {
             </div>
           )}
 
-          {!annLoading && announcements.length === 0 && (
-            <div className="glass-card p-8 text-center text-sm text-muted-foreground">
-              No announcements yet.{canPost ? " Post one to notify the team." : ""}
+          {!annLoading && annError && (
+            <div className="glass-card">
+              <ErrorState what="announcements" onRetry={reloadAnnouncements} compact />
+            </div>
+          )}
+
+          {!annLoading && !annError && announcements.length === 0 && (
+            <div className="glass-card">
+              <EmptyState
+                icon={Megaphone}
+                title="No announcements yet"
+                description={canPost
+                  ? "Post one to get everyone on the same page — it lands for the whole team instantly."
+                  : "When your managers share news, it'll show up here."}
+                action={canPost ? { label: "Write an announcement", onClick: () => setComposing(true) } : undefined}
+                compact
+              />
             </div>
           )}
         </div>
@@ -241,12 +257,19 @@ export default function CorporatePage() {
             <div className="space-y-2">
               {[1,2,3,4,5].map((i) => <div key={i} className="glass-card h-12 animate-pulse" />)}
             </div>
+          ) : logError ? (
+            <div className="glass-card">
+              <ErrorState what="the audit log" onRetry={reloadLogs} compact />
+            </div>
           ) : (
             <div className="glass-card divide-y divide-border overflow-hidden">
               {logs.length === 0 && (
-                <p className="text-sm text-muted-foreground text-center py-10">
-                  No audit entries yet — actions taken by your team will appear here.
-                </p>
+                <EmptyState
+                  icon={ScrollText}
+                  title="Nothing logged yet"
+                  description="Every status change, assignment, and room update your team makes gets recorded here automatically."
+                  compact
+                />
               )}
               {logs.map((log) => (
                 <div key={log.id} className="flex items-start gap-3 px-4 py-3 hover:bg-foreground/[0.02] transition-colors">

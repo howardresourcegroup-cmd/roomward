@@ -47,9 +47,15 @@ export function BuildingCard({ building, index = 0, onDelete, onUpdate, canManag
       {canManage && (
         <div className="absolute top-3 right-3 z-10">
           <div className="relative">
+            {/* Reveal-on-hover only where hover exists — on touch there is no
+                hover, so the menu has to be there from the start. */}
             <Button
               size="icon" variant="ghost"
-              className="h-7 w-7 opacity-0 group-hover/card:opacity-100 transition-opacity"
+              aria-label={`Actions for ${building.name}`}
+              className={cn(
+                "h-9 w-9 transition-opacity [@media(hover:hover)]:opacity-0 [@media(hover:hover)]:group-hover/card:opacity-100 focus-visible:opacity-100",
+                menuOpen && "opacity-100"
+              )}
               onClick={e => { e.preventDefault(); e.stopPropagation(); setMenuOpen(o => !o); }}
             >
               <MoreHorizontal className="h-4 w-4" />

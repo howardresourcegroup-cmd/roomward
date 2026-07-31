@@ -118,11 +118,15 @@ export interface Space {
   expected_checkout_at?: string | null;
   housekeeping_status?: HousekeepingStatus;
   occupancy?: Occupancy;
+  /** Housekeeper responsible for this room today. Null = unassigned. */
+  housekeeper_id?: string | null;
+  housekeeping_assigned_at?: string | null;
   created_at: string;
   updated_at: string;
   // virtual
   floor?: Floor & { building?: Building };
   open_work_orders?: number;
+  housekeeper?: Pick<Profile, "id" | "full_name" | "avatar_url"> | null; // virtual (joined)
 }
 
 export interface Asset {
@@ -281,4 +285,158 @@ export interface ActivityItem {
   user: { name: string; avatar?: string };
   timestamp: string;
   meta?: Record<string, string>;
+}
+
+// ─── Occupancy analytics ─────────────────────────────────────────────────────
+// One row per property per night. `stay_date` is the night *begun* — the row for
+// 2026-07-29 describes the night of the 29th into the 30th, which is what hotels
+// mean by "last night". Rows for future dates are the forecast: `is_actual`
+// false, driven by confirmed reservations from the PMS.
+export interface OccupancySnapshot {
+  id: string;
+  organization_id: string;
+  building_id: string | null;
+  stay_date: string;              // YYYY-MM-DD
+  rooms_total: number;
+  rooms_occupied: number;
+  rooms_out_of_service: number;
+  arrivals: number;
+  departures: number;
+  adr_cents: number | null;       // average daily rate
+  is_actual: boolean;             // true = settled history, false = forecast
+  created_at: string;
+  updated_at: string;
+}
+
+/** Derived per-night metrics — computed, never stored. See lib/analytics.ts. */
+export interface OccupancyMetrics {
+  stay_date: string;
+  rooms_total: number;
+  rooms_occupied: number;
+  rooms_sellable: number;         // total minus out-of-service
+  occupancy_pct: number;          // occupied / sellable
+  arrivals: number;
+  departures: number;
+  adr_cents: number | null;
+  revpar_cents: number | null;    // revenue per available room
+  is_actual: boolean;
+}
+
+// ─── Food & Beverage ─────────────────────────────────────────────────────────
+export type OutletKind = "restaurant" | "bar" | "cafe" | "room_service" | "banquet_kitchen";
+export type FnbUnit = "each" | "case" | "lb" | "kg" | "liter" | "gallon" | "bottle";
+
+export interface FnbOutlet {
+  id: string;
+  organization_id: string;
+  space_id: string | null;
+  name: string;
+  kind: OutletKind;
+  is_open: boolean;
+  opens_at: string | null;        // "07:00"
+  closes_at: string | null;       // "22:00"
+  seats: number | null;
+  notes: string | null;
+  created_at: string;
+  updated_at: string;
+  // virtual
+  _low_stock_count?: number;
+  _open_work_orders?: number;
+}
+
+/** Stock line. Reorder is needed when on_hand <= par_level. */
+export interface FnbInventoryItem {
+  id: string;
+  organization_id: string;
+  outlet_id: string | null;
+  name: string;
+  category: string | null;        // "produce" | "dairy" | "liquor" | "dry goods" …
+  unit: FnbUnit;
+  on_hand: number;
+  par_level: number;
+  unit_cost_cents: number | null;
+  supplier: string | null;
+  last_counted_at: string | null;
+  created_at: string;
+  updated_at: string;
+  // virtual
+  outlet?: Pick<FnbOutlet, "id" | "name"> | null;
+}
+
+/**
+ * Food-safety temperature log. Kept here rather than in a generic readings table
+ * because the pass/fail band is regulatory and differs per equipment type.
+ */
+export interface FnbTempLog {
+  id: string;
+  organization_id: string;
+  outlet_id: string | null;
+  asset_id: string | null;
+  equipment_label: string;
+  temp_f: number;
+  min_f: number;
+  max_f: number;
+  in_range: boolean;
+  logged_by: string | null;
+  note: string | null;
+  created_at: string;
+  // virtual
+  logger?: Pick<Profile, "id" | "full_name"> | null;
+}
+
+// ─── Banquets / conference rentals ───────────────────────────────────────────
+export type EventStatus = "inquiry" | "tentative" | "confirmed" | "in_progress" | "completed" | "cancelled";
+export type SetupStyle = "theater" | "classroom" | "banquet_rounds" | "u_shape" | "boardroom" | "reception" | "hollow_square";
+
+export interface BanquetEvent {
+  id: string;
+  organization_id: string;
+  space_id: string | null;
+  name: string;
+  client_name: string;
+  client_email: string | null;
+  client_phone: string | null;
+  status: EventStatus;
+  setup_style: SetupStyle;
+  headcount: number;
+  starts_at: string;
+  ends_at: string;
+  setup_starts_at: string | null;   // room must be ready by starts_at
+  teardown_ends_at: string | null;
+  quoted_cents: number | null;
+  deposit_paid: boolean;
+  av_needs: string[];               // "projector", "mics: 2", …
+  catering_notes: string | null;
+  notes: string | null;
+  created_by: string | null;
+  created_at: string;
+  updated_at: string;
+  // virtual
+  space?: Pick<Space, "id" | "name"> | null;
+}
+
+// ─── Modular dashboard ───────────────────────────────────────────────────────
+/** Stable ids for dashboard widgets. See DASHBOARD_WIDGETS in lib/dashboard-widgets.ts. */
+export type WidgetId =
+  | "stats"
+  | "occupancy_last_night"
+  | "occupancy_forecast"
+  | "urgent_work_orders"
+  | "metrics_chart"
+  | "building_health"
+  | "activity_feed"
+  | "housekeeping_progress"
+  | "fnb_low_stock"
+  | "upcoming_events";
+
+export interface DashboardWidgetPref {
+  id: WidgetId;
+  visible: boolean;
+}
+
+/** Per-user dashboard arrangement. Order of the array is the render order. */
+export interface DashboardLayout {
+  widgets: DashboardWidgetPref[];
+  /** Bumped when the built-in widget catalog changes so we can merge in new ones. */
+  version: number;
 }

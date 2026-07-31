@@ -65,7 +65,7 @@ function StatCard({ label, value, sub, icon: Icon, color, trend, delay = 0, puls
           <span>{trend.value}% vs last week</span>
         </div>
       ) : href ? (
-        <div className="flex items-center gap-1 text-xs font-medium text-muted-foreground group-hover:text-muted-foreground transition-colors">
+        <div className="flex items-center gap-1 text-xs font-medium text-muted-foreground group-hover:text-foreground transition-colors">
           <span>View</span>
           <ArrowUpRight className="h-3 w-3 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
         </div>
