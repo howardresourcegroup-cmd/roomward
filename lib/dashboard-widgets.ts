@@ -23,7 +23,10 @@ export const DASHBOARD_LAYOUT_VERSION = 1;
 export const DASHBOARD_WIDGETS: WidgetDef[] = [
   { id: "stats",                 title: "Operations stats",     description: "Active issues, uptime, technicians online.",       defaultVisible: true,  span: 12 },
   { id: "occupancy_last_night",  title: "Last night",           description: "Settled occupancy, ADR and RevPAR.",               defaultVisible: true,  span: 6, permission: "reports.view" },
-  { id: "occupancy_forecast",    title: "Tomorrow — anticipated",description: "Forecast occupancy and expected arrivals.",        defaultVisible: true,  span: 6, permission: "reports.view" },
+  // Only one occupancy tile is on by default. Both are empty until a PMS feeds
+  // the property, and two identical "no data yet" panels side by side reads as
+  // something broken rather than something not yet connected.
+  { id: "occupancy_forecast",    title: "Tomorrow — anticipated",description: "Forecast occupancy and expected arrivals.",        defaultVisible: false, span: 6, permission: "reports.view" },
   { id: "urgent_work_orders",    title: "Needs attention",      description: "Critical and in-progress jobs.",                   defaultVisible: true,  span: 8, permission: "work_orders.view" },
   { id: "building_health",       title: "Portfolio health",     description: "Operational share per building.",                  defaultVisible: true,  span: 4, permission: "buildings.view" },
   { id: "metrics_chart",         title: "Work order trend",     description: "Opened vs closed over the week.",                  defaultVisible: true,  span: 8, permission: "reports.view" },

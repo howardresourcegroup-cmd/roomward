@@ -7,7 +7,7 @@
 import { createClient } from "@/lib/supabase/client";
 import { computeDashboardStats } from "@/lib/data/stats";
 import { deriveSpaceStatusFromWorkOrder } from "@/lib/work-orders/status";
-import { isSupabaseConfigured } from "@/lib/demo-mode";
+import { isSupabaseConfigured, refuseWriteInDemo } from "@/lib/demo-mode";
 import {
   MOCK_HOUSEKEEPERS, MOCK_OCCUPANCY, MOCK_FNB_OUTLETS, MOCK_SPACES,
   MOCK_FNB_INVENTORY, MOCK_FNB_TEMP_LOGS, MOCK_BANQUET_EVENTS,
@@ -655,7 +655,7 @@ export async function fetchHousekeepers(): Promise<Profile[]> {
 }
 
 export async function assignHousekeeper(spaceId: string, housekeeperId: string | null): Promise<void> {
-  if (!isSupabaseConfigured()) return;
+  refuseWriteInDemo("Room assignments");
   const { error } = await sb()
     .from("spaces")
     .update({
@@ -668,7 +668,8 @@ export async function assignHousekeeper(spaceId: string, housekeeperId: string |
 
 /** Assign several rooms at once — the normal way a board gets built each morning. */
 export async function assignHousekeeperBulk(spaceIds: string[], housekeeperId: string | null): Promise<void> {
-  if (!isSupabaseConfigured() || spaceIds.length === 0) return;
+  if (spaceIds.length === 0) return;
+  refuseWriteInDemo("Room assignments");
   const { error } = await sb()
     .from("spaces")
     .update({
@@ -724,7 +725,7 @@ export async function createOutlet(input: {
   seats?: number | null;
   notes?: string | null;
 }): Promise<void> {
-  if (!isSupabaseConfigured()) return;
+  refuseWriteInDemo("New outlets");
   const { error } = await sb().from("fnb_outlets").insert({
     organization_id: await myOrgId(),
     name: input.name,
@@ -739,13 +740,13 @@ export async function createOutlet(input: {
 }
 
 export async function updateOutlet(id: string, patch: Partial<FnbOutlet>): Promise<void> {
-  if (!isSupabaseConfigured()) return;
+  refuseWriteInDemo("Outlet changes");
   const { error } = await sb().from("fnb_outlets").update(patch).eq("id", id);
   if (error) throw error;
 }
 
 export async function deleteOutlet(id: string): Promise<void> {
-  if (!isSupabaseConfigured()) return;
+  refuseWriteInDemo("Outlet removal");
   const { error } = await sb().from("fnb_outlets").delete().eq("id", id);
   if (error) throw error;
 }
@@ -760,7 +761,7 @@ export async function createInventoryItem(input: {
   unit_cost_cents?: number | null;
   supplier?: string | null;
 }): Promise<void> {
-  if (!isSupabaseConfigured()) return;
+  refuseWriteInDemo("New stock lines");
   const { error } = await sb().from("fnb_inventory_items").insert({
     organization_id: await myOrgId(),
     name: input.name,
@@ -777,13 +778,13 @@ export async function createInventoryItem(input: {
 }
 
 export async function deleteInventoryItem(id: string): Promise<void> {
-  if (!isSupabaseConfigured()) return;
+  refuseWriteInDemo("Stock removal");
   const { error } = await sb().from("fnb_inventory_items").delete().eq("id", id);
   if (error) throw error;
 }
 
 export async function setOutletOpen(outletId: string, isOpen: boolean): Promise<void> {
-  if (!isSupabaseConfigured()) return;
+  refuseWriteInDemo("Outlet status");
   const { error } = await sb().from("fnb_outlets").update({ is_open: isOpen }).eq("id", outletId);
   if (error) throw error;
 }
@@ -800,7 +801,7 @@ export async function fetchFnbInventory(): Promise<FnbInventoryItem[]> {
 
 /** Record a physical count. Stamps last_counted_at so stale lines are visible. */
 export async function countInventoryItem(itemId: string, onHand: number): Promise<void> {
-  if (!isSupabaseConfigured()) return;
+  refuseWriteInDemo("Stock counts");
   const { error } = await sb()
     .from("fnb_inventory_items")
     .update({ on_hand: onHand, last_counted_at: new Date().toISOString() })
@@ -827,7 +828,7 @@ export async function createTempLog(input: {
   max_f: number;
   note?: string | null;
 }): Promise<void> {
-  if (!isSupabaseConfigured()) return;
+  refuseWriteInDemo("Temperature readings");
   const supabase = sb();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) throw new Error("Not authenticated");
@@ -862,7 +863,7 @@ export async function fetchBanquetEvents(): Promise<BanquetEvent[]> {
 export async function createBanquetEvent(input: Partial<BanquetEvent> & {
   name: string; client_name: string; starts_at: string; ends_at: string;
 }): Promise<void> {
-  if (!isSupabaseConfigured()) return;
+  refuseWriteInDemo("New bookings");
   const supabase = sb();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) throw new Error("Not authenticated");
@@ -894,7 +895,7 @@ export async function createBanquetEvent(input: Partial<BanquetEvent> & {
 }
 
 export async function updateBanquetEvent(id: string, patch: Partial<BanquetEvent>): Promise<void> {
-  if (!isSupabaseConfigured()) return;
+  refuseWriteInDemo("Booking changes");
   const { error } = await sb().from("banquet_events").update(patch).eq("id", id);
   if (error) throw error;
 }

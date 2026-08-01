@@ -23,12 +23,12 @@ const COPY = {
   last_night: {
     icon: Moon,
     eyebrow: "Last night",
-    empty: "No settled figures for last night yet.",
+    empty: "Occupancy arrives from your PMS. Once it's connected, last night's rooms sold, ADR and RevPAR land here.",
   },
   tomorrow: {
     icon: Sunrise,
     eyebrow: "Tomorrow — anticipated",
-    empty: "No forecast for tomorrow yet.",
+    empty: "Tomorrow's forecast comes from confirmed reservations in your PMS.",
   },
 } as const;
 

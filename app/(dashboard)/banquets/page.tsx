@@ -15,6 +15,7 @@ import { EventForm } from "@/components/banquets/event-form";
 import { Button } from "@/components/ui/button";
 import { formatCents } from "@/lib/analytics";
 import { cn } from "@/lib/utils";
+import { isDemoMode } from "@/lib/demo-mode";
 import type { BanquetEvent, EventStatus, SetupStyle } from "@/types";
 
 type Tab = "upcoming" | "today" | "all";
@@ -46,7 +47,7 @@ function isForward(e: BanquetEvent, now: Date): boolean {
 export default function BanquetsPage() {
   const { events, loading, error, reload, create, update } = useBanquetEvents();
   const { can } = usePermissions();
-  const canManage = can("banquets.manage");
+  const canManage = can("banquets.manage") && !isDemoMode();
   const [tab, setTab] = useState<Tab>("upcoming");
   const [formOpen, setFormOpen] = useState(false);
   const [editing, setEditing] = useState<BanquetEvent | null>(null);

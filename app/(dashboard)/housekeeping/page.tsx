@@ -9,6 +9,7 @@ import { OccupancyBadge } from "@/components/rooms/occupancy-badge";
 import { AssignmentBoard } from "@/components/housekeeping/assignment-board";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { cn, getInitials } from "@/lib/utils";
+import { isDemoMode } from "@/lib/demo-mode";
 import type { HousekeepingStatus, Space } from "@/types";
 
 const COLUMNS: { status: HousekeepingStatus; label: string; color: string; bg: string; border: string; dot: string }[] = [
@@ -34,7 +35,7 @@ export default function HousekeepingPage() {
   const me = useCurrentProfile();
   const isManager = me?.role === "manager" || me?.role === "admin";
   const canClean = can("spaces.update_status");
-  const canAssign = can("housekeeping.assign");
+  const canAssign = can("housekeeping.assign") && !isDemoMode();
 
   const [view, setView] = useState<View>("board");
   // Housekeepers overwhelmingly want their own list, not the whole property.

@@ -17,6 +17,7 @@ import { OutletForm } from "@/components/fnb/outlet-form";
 import { InventoryForm } from "@/components/fnb/inventory-form";
 import { cn } from "@/lib/utils";
 import { toast } from "@/components/ui/toast";
+import { isDemoMode } from "@/lib/demo-mode";
 import type { FnbInventoryItem, OutletKind } from "@/types";
 
 type Tab = "outlets" | "inventory" | "temps";
@@ -55,7 +56,9 @@ export default function FoodBeveragePage() {
   const [addingItem, setAddingItem] = useState(false);
   const { logs, loading: logsLoading, error: logsError, reload: reloadLogs } = useFnbTempLogs();
   const { can } = usePermissions();
-  const canManage = can("fnb.manage");
+  // Writes need somewhere to go. Offering "Add outlet" with no database behind
+  // it would promise something the save cannot keep.
+  const canManage = can("fnb.manage") && !isDemoMode();
 
   const belowPar = useMemo(() => items.filter((i) => i.on_hand <= i.par_level), [items]);
   const failing = useMemo(() => {
@@ -414,7 +417,9 @@ function TempLogPanel() {
   const { logs, loading, log } = useFnbTempLogs();
   const { outlets } = useFnbOutlets();
   const { can } = usePermissions();
-  const canManage = can("fnb.manage");
+  // Writes need somewhere to go. Offering "Add outlet" with no database behind
+  // it would promise something the save cannot keep.
+  const canManage = can("fnb.manage") && !isDemoMode();
 
   const [preset, setPreset] = useState(TEMP_PRESETS[0].label);
   const [temp, setTemp] = useState("");

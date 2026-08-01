@@ -15,3 +15,24 @@ export function isSupabaseConfigured(): boolean {
 export function isDemoMode(): boolean {
   return !isSupabaseConfigured();
 }
+
+/**
+ * Thrown when a write is attempted with no database behind it.
+ *
+ * Reads fall back to the bundled demo property, which is honest — the data on
+ * screen is real, it just isn't yours. Writes have no such equivalent: silently
+ * returning would let the UI report success for something that never happened,
+ * which is worse than any error. Callers surface this; the UI also hides the
+ * controls up front so it is rarely reached.
+ */
+export class DemoWriteError extends Error {
+  constructor(what = "Changes") {
+    super(`${what} can't be saved — this is a demo with no database connected.`);
+    this.name = "DemoWriteError";
+  }
+}
+
+/** Guard at the top of every mutating query. */
+export function refuseWriteInDemo(what?: string): void {
+  if (!isSupabaseConfigured()) throw new DemoWriteError(what);
+}
