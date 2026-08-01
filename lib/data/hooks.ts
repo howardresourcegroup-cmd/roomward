@@ -406,7 +406,22 @@ export function useFnbOutlets() {
     }
   }, [setData]);
 
-  return { outlets: data, loading, error, reload, toggleOpen };
+  const create = useCallback(async (input: Parameters<typeof q.createOutlet>[0]) => {
+    await q.createOutlet(input);
+    reload();
+  }, [reload]);
+
+  const update = useCallback(async (id: string, patch: Partial<FnbOutlet>) => {
+    await q.updateOutlet(id, patch);
+    reload();
+  }, [reload]);
+
+  const remove = useCallback(async (id: string) => {
+    await q.deleteOutlet(id);
+    reload();
+  }, [reload]);
+
+  return { outlets: data, loading, error, reload, toggleOpen, create, update, remove };
 }
 
 export function useFnbInventory() {
@@ -427,7 +442,17 @@ export function useFnbInventory() {
     }
   }, [setData]);
 
-  return { items: data, loading, error, reload, count };
+  const create = useCallback(async (input: Parameters<typeof q.createInventoryItem>[0]) => {
+    await q.createInventoryItem(input);
+    reload();
+  }, [reload]);
+
+  const remove = useCallback(async (id: string) => {
+    await q.deleteInventoryItem(id);
+    reload();
+  }, [reload]);
+
+  return { items: data, loading, error, reload, count, create, remove };
 }
 
 export function useFnbTempLogs(limit = 40) {

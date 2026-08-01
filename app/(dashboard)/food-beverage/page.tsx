@@ -13,6 +13,8 @@ import { PageLoader } from "@/components/shared/loading-spinner";
 import { EmptyState } from "@/components/shared/empty-state";
 import { ErrorState } from "@/components/shared/error-state";
 import { useFnbOutlets, useFnbInventory, useFnbTempLogs, usePermissions } from "@/lib/data/hooks";
+import { OutletForm } from "@/components/fnb/outlet-form";
+import { InventoryForm } from "@/components/fnb/inventory-form";
 import { cn } from "@/lib/utils";
 import { toast } from "@/components/ui/toast";
 import type { FnbInventoryItem, OutletKind } from "@/types";
@@ -47,8 +49,10 @@ function prettyTime(t: string | null): string | null {
 
 export default function FoodBeveragePage() {
   const [tab, setTab] = useState<Tab>("outlets");
-  const { outlets, loading: outletsLoading, error: outletsError, reload: reloadOutlets, toggleOpen } = useFnbOutlets();
-  const { items, loading: itemsLoading, error: itemsError, reload: reloadItems, count } = useFnbInventory();
+  const { outlets, loading: outletsLoading, error: outletsError, reload: reloadOutlets, toggleOpen, create: createOutlet } = useFnbOutlets();
+  const { items, loading: itemsLoading, error: itemsError, reload: reloadItems, count, create: createItem } = useFnbInventory();
+  const [addingOutlet, setAddingOutlet] = useState(false);
+  const [addingItem, setAddingItem] = useState(false);
   const { logs, loading: logsLoading, error: logsError, reload: reloadLogs } = useFnbTempLogs();
   const { can } = usePermissions();
   const canManage = can("fnb.manage");
@@ -72,7 +76,8 @@ export default function FoodBeveragePage() {
 
   return (
     <div className="space-y-6">
-      <div>
+      <div className="flex items-start justify-between gap-3 flex-wrap">
+        <div>
         <h1 className="text-2xl font-bold text-foreground">Food &amp; Beverage</h1>
         <p className="text-sm text-muted-foreground mt-1">
           Outlets, par-level stock, and food-safety temperature logs.
@@ -93,6 +98,14 @@ export default function FoodBeveragePage() {
             {belowPar.length} line{belowPar.length === 1 ? "" : "s"} at or below par
           </span>
         </div>
+        </div>
+
+        {canManage && tab !== "temps" && (
+          <Button size="sm" onClick={() => tab === "outlets" ? setAddingOutlet(true) : setAddingItem(true)}>
+            <Plus className="h-3.5 w-3.5" />
+            {tab === "outlets" ? "Add outlet" : "Add item"}
+          </Button>
+        )}
       </div>
 
       {/* Tabs */}
@@ -120,6 +133,7 @@ export default function FoodBeveragePage() {
             icon={UtensilsCrossed}
             title="No outlets yet"
             description="Add your restaurants, bars and cafés to track their stock and equipment here."
+            action={canManage ? { label: "Add your first outlet", onClick: () => setAddingOutlet(true) } : undefined}
             hint="Each outlet gets its own par-level list and temperature log."
           />
         ) : (
@@ -188,6 +202,7 @@ export default function FoodBeveragePage() {
             icon={PackageSearch}
             title="No stock lines yet"
             description="Add the items you count, with a par level for each, and shortfalls will surface here."
+            action={canManage ? { label: "Add your first item", onClick: () => setAddingItem(true) } : undefined}
             hint="A line appears in the reorder list once it drops to its par level."
           />
         ) : (
@@ -200,6 +215,9 @@ export default function FoodBeveragePage() {
         logsError ? <ErrorState what="the temperature log" onRetry={reloadLogs} />
         : <TempLogPanel />
       )}
+
+      <OutletForm open={addingOutlet} onOpenChange={setAddingOutlet} onCreate={createOutlet} />
+      <InventoryForm open={addingItem} onOpenChange={setAddingItem} outlets={outlets} onCreate={createItem} />
     </div>
   );
 }

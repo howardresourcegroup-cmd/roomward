@@ -5,12 +5,14 @@ import { motion } from "framer-motion";
 import { format, isSameDay } from "date-fns";
 import {
   PartyPopper, CalendarDays, Users, MapPin, Projector, Utensils,
-  CircleDollarSign, Clock, ListChecks, TriangleAlert,
+  CircleDollarSign, Clock, ListChecks, TriangleAlert, Plus, Pencil,
 } from "lucide-react";
 import { PageLoader } from "@/components/shared/loading-spinner";
 import { EmptyState } from "@/components/shared/empty-state";
 import { ErrorState } from "@/components/shared/error-state";
-import { useBanquetEvents, usePermissions } from "@/lib/data/hooks";
+import { useBanquetEvents, usePermissions, useBuildingDetail, useBuildings } from "@/lib/data/hooks";
+import { EventForm } from "@/components/banquets/event-form";
+import { Button } from "@/components/ui/button";
 import { formatCents } from "@/lib/analytics";
 import { cn } from "@/lib/utils";
 import type { BanquetEvent, EventStatus, SetupStyle } from "@/types";
@@ -42,10 +44,24 @@ function isForward(e: BanquetEvent, now: Date): boolean {
 }
 
 export default function BanquetsPage() {
-  const { events, loading, error, reload } = useBanquetEvents();
+  const { events, loading, error, reload, create, update } = useBanquetEvents();
   const { can } = usePermissions();
   const canManage = can("banquets.manage");
   const [tab, setTab] = useState<Tab>("upcoming");
+  const [formOpen, setFormOpen] = useState(false);
+  const [editing, setEditing] = useState<BanquetEvent | null>(null);
+
+  // Event spaces to book. Conference rooms and ballrooms are the realistic
+  // candidates; offering every guest room would bury them.
+  const { buildings } = useBuildings();
+  const { spaces } = useBuildingDetail(buildings[0]?.id ?? "");
+  const bookableSpaces = useMemo(
+    () => spaces.filter((s) => ["conference", "event_space", "dining", "amenity"].includes(s.type)),
+    [spaces]
+  );
+
+  const openNew = () => { setEditing(null); setFormOpen(true); };
+  const openEdit = (e: BanquetEvent) => { setEditing(e); setFormOpen(true); };
 
   const now = new Date();
 
@@ -81,11 +97,18 @@ export default function BanquetsPage() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold text-foreground">Banquets</h1>
-        <p className="text-sm text-muted-foreground mt-1">
-          Conference and event rentals — bookings, room setup, AV and catering.
-        </p>
+      <div className="flex items-start justify-between gap-3 flex-wrap">
+        <div>
+          <h1 className="text-2xl font-bold text-foreground">Banquets</h1>
+          <p className="text-sm text-muted-foreground mt-1">
+            Conference and event rentals — bookings, room setup, AV and catering.
+          </p>
+        </div>
+        {canManage && (
+          <Button size="sm" onClick={openNew}>
+            <Plus className="h-3.5 w-3.5" /> Book event
+          </Button>
+        )}
       </div>
 
       {/* Headline figures */}
@@ -127,13 +150,27 @@ export default function BanquetsPage() {
               ? "No events are scheduled in the function space today."
               : "Conference and banquet bookings will appear here with their setup, AV and catering requirements."
           }
+          action={canManage && tab !== "today" ? { label: "Book your first event", onClick: openNew } : undefined}
           hint={canManage ? undefined : "Ask a manager to add a booking."}
         />
       ) : (
         <div className="space-y-3">
-          {list.map((e, i) => <EventCard key={e.id} event={e} index={i} />)}
+          {list.map((e, i) => (
+            <EventCard key={e.id} event={e} index={i} onEdit={canManage ? () => openEdit(e) : undefined} />
+          ))}
         </div>
       )}
+
+      <EventForm
+        open={formOpen}
+        onOpenChange={setFormOpen}
+        spaces={bookableSpaces}
+        event={editing}
+        onSubmit={async (input) => {
+          if (editing) await update(editing.id, input);
+          else await create(input);
+        }}
+      />
     </div>
   );
 }
@@ -153,7 +190,7 @@ function Stat({ label, value, sub, icon: Icon, tone }: {
   );
 }
 
-function EventCard({ event: e, index }: { event: BanquetEvent; index: number }) {
+function EventCard({ event: e, index, onEdit }: { event: BanquetEvent; index: number; onEdit?: () => void }) {
   const status = STATUS_STYLE[e.status] ?? STATUS_STYLE.inquiry;
   const start = new Date(e.starts_at);
   const end = new Date(e.ends_at);
@@ -180,9 +217,20 @@ function EventCard({ event: e, index }: { event: BanquetEvent; index: number }) 
           </div>
           <p className="text-xs text-muted-foreground mt-0.5">{e.client_name}</p>
         </div>
-        <p className="text-sm font-semibold text-foreground tabular-nums shrink-0">
-          {formatCents(e.quoted_cents)}
-        </p>
+        <div className="flex items-center gap-2 shrink-0">
+          <p className="text-sm font-semibold text-foreground tabular-nums">
+            {formatCents(e.quoted_cents)}
+          </p>
+          {onEdit && (
+            <button
+              onClick={onEdit}
+              aria-label={`Edit ${e.name}`}
+              className="h-8 w-8 flex items-center justify-center rounded-lg text-muted-foreground hover:text-foreground hover:bg-foreground/[0.06] transition-colors"
+            >
+              <Pencil className="h-3.5 w-3.5" />
+            </button>
+          )}
+        </div>
       </div>
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-x-4 gap-y-2 mt-3 pt-3 border-t border-border text-xs">

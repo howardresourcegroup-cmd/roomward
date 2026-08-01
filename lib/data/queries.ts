@@ -17,7 +17,7 @@ import type {
   Building, Floor, Space, WorkOrder, Profile, Channel, Message, Asset,
   SpaceStatus, HousekeepingStatus, WorkOrderStatus, WorkOrderPriority, AssetStatus, DashboardStats,
   AuditLog, Announcement, OccupancySnapshot, FnbOutlet, FnbInventoryItem, FnbTempLog,
-  BanquetEvent, DashboardLayout,
+  BanquetEvent, DashboardLayout, OutletKind, FnbUnit,
 } from "@/types";
 
 const sb = () => createClient();
@@ -700,6 +700,86 @@ export async function fetchFnbOutlets(): Promise<FnbOutlet[]> {
   const { data, error } = await sb().from("fnb_outlets").select("*").order("name");
   if (error) throw error;
   return (data ?? []) as FnbOutlet[];
+}
+
+/** Resolve the caller's org for an insert. RLS scopes reads, but writes still
+ *  have to name the org they belong to. */
+async function myOrgId(): Promise<string> {
+  const supabase = sb();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) throw new Error("Not signed in");
+  const { data, error } = await supabase
+    .from("profiles").select("organization_id").eq("id", user.id).maybeSingle();
+  if (error) throw error;
+  if (!data?.organization_id) throw new Error("No organization");
+  return data.organization_id as string;
+}
+
+export async function createOutlet(input: {
+  name: string;
+  kind: OutletKind;
+  space_id?: string | null;
+  opens_at?: string | null;
+  closes_at?: string | null;
+  seats?: number | null;
+  notes?: string | null;
+}): Promise<void> {
+  if (!isSupabaseConfigured()) return;
+  const { error } = await sb().from("fnb_outlets").insert({
+    organization_id: await myOrgId(),
+    name: input.name,
+    kind: input.kind,
+    space_id: input.space_id ?? null,
+    opens_at: input.opens_at || null,
+    closes_at: input.closes_at || null,
+    seats: input.seats ?? null,
+    notes: input.notes ?? null,
+  });
+  if (error) throw error;
+}
+
+export async function updateOutlet(id: string, patch: Partial<FnbOutlet>): Promise<void> {
+  if (!isSupabaseConfigured()) return;
+  const { error } = await sb().from("fnb_outlets").update(patch).eq("id", id);
+  if (error) throw error;
+}
+
+export async function deleteOutlet(id: string): Promise<void> {
+  if (!isSupabaseConfigured()) return;
+  const { error } = await sb().from("fnb_outlets").delete().eq("id", id);
+  if (error) throw error;
+}
+
+export async function createInventoryItem(input: {
+  name: string;
+  outlet_id?: string | null;
+  category?: string | null;
+  unit: FnbUnit;
+  on_hand: number;
+  par_level: number;
+  unit_cost_cents?: number | null;
+  supplier?: string | null;
+}): Promise<void> {
+  if (!isSupabaseConfigured()) return;
+  const { error } = await sb().from("fnb_inventory_items").insert({
+    organization_id: await myOrgId(),
+    name: input.name,
+    outlet_id: input.outlet_id ?? null,
+    category: input.category ?? null,
+    unit: input.unit,
+    on_hand: input.on_hand,
+    par_level: input.par_level,
+    unit_cost_cents: input.unit_cost_cents ?? null,
+    supplier: input.supplier ?? null,
+    last_counted_at: new Date().toISOString(),
+  });
+  if (error) throw error;
+}
+
+export async function deleteInventoryItem(id: string): Promise<void> {
+  if (!isSupabaseConfigured()) return;
+  const { error } = await sb().from("fnb_inventory_items").delete().eq("id", id);
+  if (error) throw error;
 }
 
 export async function setOutletOpen(outletId: string, isOpen: boolean): Promise<void> {
