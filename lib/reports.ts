@@ -27,7 +27,7 @@ export interface ReportDef {
   name: string;
   description: string;
   /** Which permission gates it, beyond reports.view. */
-  group: "Occupancy" | "Maintenance" | "Housekeeping" | "Food & Beverage" | "Banquets";
+  group: "Occupancy" | "Maintenance" | "Housekeeping" | "Food & Beverage" | "Conferences & Events";
 }
 
 export const REPORT_CATALOG: ReportDef[] = [
@@ -37,7 +37,7 @@ export const REPORT_CATALOG: ReportDef[] = [
   { id: "wo_aging",            name: "Open work order aging",   description: "Every unresolved job, oldest first.", group: "Maintenance" },
   { id: "hk_productivity",     name: "Housekeeping boards",     description: "Rooms assigned and completed per housekeeper.", group: "Housekeeping" },
   { id: "fnb_below_par",       name: "Stock below par",         description: "Every F&B line at or under its par level.", group: "Food & Beverage" },
-  { id: "banquet_pipeline",    name: "Banquet pipeline",        description: "Booked and prospective events with quoted value.", group: "Banquets" },
+  { id: "banquet_pipeline",    name: "Event pipeline",          description: "Booked and prospective events with quoted value.", group: "Conferences & Events" },
 ];
 
 // ─── CSV ─────────────────────────────────────────────────────────────────────

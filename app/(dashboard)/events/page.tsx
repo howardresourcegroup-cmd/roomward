@@ -11,7 +11,7 @@ import { PageLoader } from "@/components/shared/loading-spinner";
 import { EmptyState } from "@/components/shared/empty-state";
 import { ErrorState } from "@/components/shared/error-state";
 import { useBanquetEvents, usePermissions, useBuildingDetail, useBuildings } from "@/lib/data/hooks";
-import { EventForm } from "@/components/banquets/event-form";
+import { EventForm } from "@/components/events/event-form";
 import { Button } from "@/components/ui/button";
 import { formatCents } from "@/lib/analytics";
 import { cn } from "@/lib/utils";
@@ -44,7 +44,7 @@ function isForward(e: BanquetEvent, now: Date): boolean {
   return e.status !== "cancelled" && e.status !== "completed" && new Date(e.ends_at) >= now;
 }
 
-export default function BanquetsPage() {
+export default function EventsPage() {
   const { events, loading, error, reload, create, update } = useBanquetEvents();
   const { can } = usePermissions();
   const canManage = can("banquets.manage") && !isDemoMode();
@@ -100,9 +100,9 @@ export default function BanquetsPage() {
     <div className="space-y-6">
       <div className="flex items-start justify-between gap-3 flex-wrap">
         <div>
-          <h1 className="text-2xl font-bold text-foreground">Banquets</h1>
+          <h1 className="text-2xl font-bold text-foreground">Conferences &amp; Events</h1>
           <p className="text-sm text-muted-foreground mt-1">
-            Conference and event rentals — bookings, room setup, AV and catering.
+            Conference, banquet and event rentals — bookings, room setup, AV and catering.
           </p>
         </div>
         {canManage && (

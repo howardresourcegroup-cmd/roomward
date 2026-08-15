@@ -153,7 +153,7 @@ export function UpcomingEventsWidget() {
   );
 
   return (
-    <WidgetShell eyebrow="Banquets" title="Upcoming events" href="/banquets" linkLabel="Calendar">
+    <WidgetShell eyebrow="Conferences & Events" title="Upcoming events" href="/events" linkLabel="Calendar">
       {upcoming.length === 0 ? (
         <p className="text-sm text-muted-foreground py-4 text-center">Nothing booked yet.</p>
       ) : (

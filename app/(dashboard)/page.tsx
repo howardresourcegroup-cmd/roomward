@@ -13,6 +13,12 @@ import { OccupancyStat } from "@/components/analytics/occupancy-stat";
 import {
   HousekeepingProgressWidget, FnbLowStockWidget, UpcomingEventsWidget, UnknownWidget,
 } from "@/components/dashboard/ops-widgets";
+import {
+  MyWorkQueueWidget, WorkOrderBacklogWidget, AssetHealthWidget,
+  RoomTurnoverWidget, MyRoomsWidget, RoomsReadyWidget, GuestRoomIssuesWidget,
+  TempComplianceWidget, KitchenPrepWidget, OutletStatusWidget,
+  EventsTodayWidget, EventPipelineWidget, TeamAvailabilityWidget, RevenueSnapshotWidget,
+} from "@/components/dashboard/department-widgets";
 import { Button } from "@/components/ui/button";
 import { WELCOME_SEEN_KEY } from "@/components/welcome-modal";
 import { MOCK_STATS } from "@/lib/mock-data";
@@ -35,9 +41,6 @@ const BuildingHealth  = dynamic(() => import("@/components/dashboard/building-he
 const RoomMasterPanel = dynamic(() => import("@/components/integrations/roommaster-panel").then(m => ({ default: m.RoomMasterPanel })), { ssr: false });
 const IntegrationsPanel = dynamic(() => import("@/components/integrations/roommaster-panel").then(m => ({ default: m.IntegrationsPanel })), { ssr: false });
 const EpturaPanel     = dynamic(() => import("@/components/integrations/eptura-panel").then(m => ({ default: m.EpturaPanel })), { ssr: false });
-const MaintenanceDashboard = dynamic(() => import("@/components/dashboard/role-dashboards").then(m => ({ default: m.MaintenanceDashboard })), { ssr: false });
-const HousekeepingDashboard = dynamic(() => import("@/components/dashboard/role-dashboards").then(m => ({ default: m.HousekeepingDashboard })), { ssr: false });
-const FrontDeskDashboard = dynamic(() => import("@/components/dashboard/role-dashboards").then(m => ({ default: m.FrontDeskDashboard })), { ssr: false });
 
 export default function DashboardPage() {
   const { workOrders } = useWorkOrders();
@@ -52,7 +55,10 @@ export default function DashboardPage() {
 
   const [customizing, setCustomizing] = useState(false);
   const { layout, save: saveLayout } = useDashboardLayout();
-  const widgets = useMemo(() => visibleWidgets(layout, can), [layout, can]);
+  const widgets = useMemo(
+    () => visibleWidgets(layout, can, profile?.role_slug),
+    [layout, can, profile?.role_slug]
+  );
 
   // A fortnight either side covers last night, the forecast, and the
   // week-over-week comparison the stat tiles show.
@@ -83,12 +89,9 @@ export default function DashboardPage() {
     return () => clearTimeout(t);
   }, []);
 
-  // Role-tailored home view — each role lands on what matters to them.
-  // Managers/admins/viewers (and custom roles) get the full operations dashboard below.
-  if (profile?.role_slug === "maintenance") return <MaintenanceDashboard profile={profile} />;
-  if (profile?.role_slug === "housekeeping") return <HousekeepingDashboard profile={profile} />;
-  if (profile?.role_slug === "front_desk") return <FrontDeskDashboard profile={profile} />;
-
+  // Every role now lands on the same customizable dashboard. What differs is the
+  // starting layout — see ROLE_DEFAULTS. Maintenance, housekeeping and front desk
+  // used to get a fixed screen here that they could not change.
   const firstName = profile?.full_name?.split(" ")[0] ?? "there";
 
   const urgentOrders = workOrders
@@ -183,6 +186,7 @@ export default function DashboardPage() {
         layout={layout}
         onSave={saveLayout}
         can={can}
+        roleSlug={profile?.role_slug}
       />
     </div>
   );
@@ -243,6 +247,20 @@ function renderWidget(id: WidgetId, d: WidgetData) {
       );
 
     case "metrics_chart":     return <MetricsChart />;
+    case "my_work_queue":     return <MyWorkQueueWidget />;
+    case "wo_backlog":        return <WorkOrderBacklogWidget />;
+    case "asset_health":      return <AssetHealthWidget />;
+    case "room_turnover":     return <RoomTurnoverWidget />;
+    case "my_rooms":          return <MyRoomsWidget />;
+    case "rooms_ready":       return <RoomsReadyWidget />;
+    case "guest_room_issues": return <GuestRoomIssuesWidget />;
+    case "temp_compliance":   return <TempComplianceWidget />;
+    case "kitchen_prep":      return <KitchenPrepWidget />;
+    case "outlet_status":     return <OutletStatusWidget />;
+    case "events_today":      return <EventsTodayWidget />;
+    case "event_pipeline":    return <EventPipelineWidget />;
+    case "team_availability": return <TeamAvailabilityWidget />;
+    case "revenue_snapshot":  return <RevenueSnapshotWidget />;
     case "building_health":   return <BuildingHealth buildings={d.buildings} />;
     case "activity_feed":     return <div className="h-[320px]"><ActivityFeed items={d.activity.slice(0, 6)} /></div>;
     case "housekeeping_progress": return <HousekeepingProgressWidget />;

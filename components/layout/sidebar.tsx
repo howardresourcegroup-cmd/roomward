@@ -24,7 +24,7 @@ const NAV_ITEMS = [
   { href: "/housekeeping", icon: BedDouble, label: "Housekeeping", perm: "buildings.view" },
   { href: "/front-desk", icon: ConciergeBell, label: "Front Desk", perm: "buildings.view" },
   { href: "/food-beverage", icon: UtensilsCrossed, label: "Food & Beverage", perm: "fnb.view" },
-  { href: "/banquets", icon: PartyPopper, label: "Banquets", perm: "banquets.view" },
+  { href: "/events", icon: PartyPopper, label: "Conferences & Events", perm: "banquets.view" },
   { href: "/messages", icon: MessageSquare, label: "Team Chat", perm: "chat.participate" },
   { href: "/corporate", icon: Megaphone, label: "Corporate", perm: "dashboard.view" },
   { href: "/technicians", icon: Users, label: "Technicians", perm: "team.view" },

@@ -418,16 +418,38 @@ export interface BanquetEvent {
 // ─── Modular dashboard ───────────────────────────────────────────────────────
 /** Stable ids for dashboard widgets. See DASHBOARD_WIDGETS in lib/dashboard-widgets.ts. */
 export type WidgetId =
+  // Overview
   | "stats"
+  | "activity_feed"
+  | "building_health"
+  // Engineering
+  | "urgent_work_orders"
+  | "my_work_queue"
+  | "metrics_chart"
+  | "wo_backlog"
+  | "asset_health"
+  // Housekeeping
+  | "housekeeping_progress"
+  | "room_turnover"
+  | "my_rooms"
+  // Front desk
+  | "rooms_ready"
+  | "guest_room_issues"
   | "occupancy_last_night"
   | "occupancy_forecast"
-  | "urgent_work_orders"
-  | "metrics_chart"
-  | "building_health"
-  | "activity_feed"
-  | "housekeeping_progress"
+  // Kitchen
+  | "temp_compliance"
+  | "kitchen_prep"
+  // Food & Beverage
   | "fnb_low_stock"
-  | "upcoming_events";
+  | "outlet_status"
+  // Conferences & Events
+  | "events_today"
+  | "upcoming_events"
+  | "event_pipeline"
+  // Management
+  | "team_availability"
+  | "revenue_snapshot";
 
 export interface DashboardWidgetPref {
   id: WidgetId;

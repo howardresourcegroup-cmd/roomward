@@ -12,6 +12,15 @@ import type {
   FnbTempLog, BanquetEvent, DashboardLayout,
 } from "@/types";
 
+// ─── Realtime channel naming ──────────────────────────────────────────────────
+// Supabase returns the *same* channel object for a given name, and calling
+// `.on()` on one that has already subscribed throws. A fixed name therefore
+// breaks the moment two components mount the same hook — which is exactly what
+// a dashboard of independent widgets does. Each subscription gets its own name;
+// the postgres filter, not the name, decides what it receives.
+let channelSeq = 0;
+const uniqueChannel = (base: string) => `${base}-${++channelSeq}`;
+
 // ─── Tiny stale-while-revalidate cache ────────────────────────────────────────
 // Survives client-side navigation (module scope), so revisiting a page shows
 // the last data instantly while a fresh fetch updates it in the background.
@@ -70,7 +79,7 @@ export function useBuildingDetail(buildingId: string) {
     if (!buildingId) return;
     const supabase = createClient();
     const channel = supabase
-      .channel(`spaces-${buildingId}`)
+      .channel(uniqueChannel(`spaces-${buildingId}`))
       .on("postgres_changes", { event: "UPDATE", schema: "public", table: "spaces" },
         (payload) => {
           const updated = payload.new as Space;
@@ -160,7 +169,7 @@ export function useHousekeeping() {
   useEffect(() => {
     const supabase = createClient();
     const channel = supabase
-      .channel("housekeeping")
+      .channel(uniqueChannel("housekeeping"))
       .on("postgres_changes", { event: "UPDATE", schema: "public", table: "spaces" },
         (payload) => {
           const u = payload.new as Space;
@@ -314,7 +323,7 @@ export function useMessages(channelId: string | null) {
     if (!channelId) return;
     const supabase = createClient();
     const channel = supabase
-      .channel(`messages-${channelId}`)
+      .channel(uniqueChannel(`messages-${channelId}`))
       .on("postgres_changes",
         { event: "INSERT", schema: "public", table: "messages", filter: `channel_id=eq.${channelId}` },
         async (payload) => {
@@ -352,7 +361,7 @@ export function useAnnouncements() {
   // Realtime: new announcements appear for everyone without a refresh
   useEffect(() => {
     const channel = supabase
-      .channel("announcements-realtime")
+      .channel(uniqueChannel("announcements-realtime"))
       .on("postgres_changes",
         { event: "INSERT", schema: "public", table: "announcements" },
         () => { reload(); }

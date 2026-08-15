@@ -12,6 +12,13 @@ const nextConfig: NextConfig = {
       { protocol: "https", hostname: "avatars.githubusercontent.com" },
     ],
   },
+  async redirects() {
+    return [
+      // Renamed to /events when "Banquets" became "Conferences & Events".
+      // The old path shipped to production, so keep it resolving.
+      { source: "/banquets", destination: "/events", permanent: true },
+    ];
+  },
 };
 
 export default nextConfig;

@@ -84,10 +84,13 @@ export const PERMISSION_CATALOG: PermissionGroup[] = [
     ],
   },
   {
-    area: "Banquets",
+    // Keys stay `banquets.*` while the UI says "Conferences & Events" — they are
+    // stored in role_permissions rows on live orgs, so renaming them is a data
+    // migration for a label change. Same split CLAUDE.md draws for `facilityflow`.
+    area: "Conferences & Events",
     permissions: [
-      { key: "banquets.view", label: "View banquets", description: "See the conference & event calendar" },
-      { key: "banquets.manage", label: "Manage banquets", description: "Book, edit and cancel events" },
+      { key: "banquets.view", label: "View events", description: "See the conference & event calendar" },
+      { key: "banquets.manage", label: "Manage events", description: "Book, edit and cancel events" },
     ],
   },
   {

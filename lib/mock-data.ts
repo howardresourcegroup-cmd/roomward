@@ -358,7 +358,7 @@ export const MOCK_FNB_OUTLETS: FnbOutlet[] = [
     id: "o5", organization_id: "org-amicolola", space_id: "s-kitchen",
     name: "Banquet Kitchen", kind: "banquet_kitchen", is_open: false,
     opens_at: null, closes_at: null, seats: null,
-    notes: "Fires only on event days — see the Banquets board.",
+    notes: "Fires only on event days — see the Conferences & Events board.",
     created_at: "2024-01-01T00:00:00Z", updated_at: "2024-01-01T00:00:00Z",
   },
 ];
