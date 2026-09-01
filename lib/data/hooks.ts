@@ -225,9 +225,24 @@ export function useHousekeeping() {
   return { rooms, loading, setStatus, assign };
 }
 
+/**
+ * The signed-in user's profile, with the load state alongside it.
+ *
+ * Callers that render identity need all three outcomes: still loading, loaded,
+ * and failed. Collapsing them to a bare `Profile | null` is what let the sidebar
+ * print "viewer" for someone whose profile request simply errored — asserting a
+ * role we do not know, and understating the permissions they actually hold.
+ */
+export function useCurrentProfileState() {
+  const { data, loading, error, reload } = useCachedQuery<Profile | null>(
+    "current_profile", q.fetchCurrentProfile, null
+  );
+  return { profile: data, loading, error, reload };
+}
+
+/** Just the profile. Fine wherever null and "not loaded" are handled the same. */
 export function useCurrentProfile() {
-  const { data } = useCachedQuery<Profile | null>("current_profile", q.fetchCurrentProfile, null);
-  return data;
+  return useCurrentProfileState().profile;
 }
 
 // ─── Roles & permissions ──────────────────────────────────────────────────────

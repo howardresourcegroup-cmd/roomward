@@ -11,7 +11,7 @@ import {
   DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem,
   DropdownMenuLabel, DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
-import { useCurrentProfile, useWorkOrders, useBuildings, useProfiles } from "@/lib/data/hooks";
+import { useCurrentProfileState, useWorkOrders, useBuildings, useProfiles } from "@/lib/data/hooks";
 import { useAppStore } from "@/lib/store";
 import { createClient } from "@/lib/supabase/client";
 import { getInitials, cn, timeAgo } from "@/lib/utils";
@@ -33,7 +33,7 @@ const PAGE_META: Record<string, { title: string }> = {
 
 export function Header() {
   const pathname = usePathname();
-  const profile = useCurrentProfile();
+  const { profile, loading: profileLoading, error: profileError } = useCurrentProfileState();
   const { workOrders } = useWorkOrders();
   const { buildings } = useBuildings();
   const { profiles } = useProfiles();
@@ -203,8 +203,12 @@ export function Header() {
                 <AvatarFallback className="text-xs">{getInitials(profile?.full_name ?? "U")}</AvatarFallback>
               </Avatar>
               <div className="min-w-0">
-                <p className="text-sm font-medium text-foreground truncate">{profile?.full_name ?? "Account"}</p>
-                <p className="text-[11px] text-muted-foreground capitalize truncate">{profile?.role ?? "member"}</p>
+                <p className="text-sm font-medium text-foreground truncate">
+                  {profile?.full_name ?? (profileLoading ? "Loading…" : "Account")}
+                </p>
+                <p className="text-[11px] text-muted-foreground capitalize truncate">
+                  {profile?.role ?? (profileError ? "Role unavailable" : profileLoading ? "…" : "No role set")}
+                </p>
               </div>
             </div>
           </DropdownMenuLabel>
